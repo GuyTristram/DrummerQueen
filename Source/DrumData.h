@@ -25,6 +25,11 @@ struct DrumLane
     std::vector<int> velocity;
 };
 
+struct DrumPattern
+{
+	std::vector<DrumLane> lanes;
+};
+
 struct DrumEvent
 {
     double beat_time;
@@ -42,7 +47,7 @@ class DrumData
 {
 public:
     DrumData(int beats, int beat_divisions, DrumDataListener &listener)
-		: m_beats(beats), m_beat_divisions(beat_divisions), m_listener(listener)
+		: m_beats(beats), m_beat_divisions(beat_divisions), m_listener(listener), m_patterns(1)
     {}
 
     void add_drum(std::string name, int note);
@@ -50,7 +55,7 @@ public:
     int beats() const { return m_beats; }
     int beat_divisions() const { return m_beat_divisions; }
 	int total_divisions() const { return m_beats * m_beat_divisions; }
-	int lane_count() const { return m_lanes.size(); }
+	int lane_count() const { return m_kit.drums.size(); }
 
 	void set_swing(float swing);
 
@@ -76,7 +81,8 @@ public:
 private:
 	void update_events();
 	DrumKit m_kit;
-    std::vector<DrumLane> m_lanes;
+	std::vector<DrumPattern> m_patterns;
+	int m_current_pattern = 0;
 	std::vector<DrumEvent> m_events;
     int m_beats = 4;
     int m_beat_divisions = 4;

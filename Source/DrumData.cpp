@@ -5,7 +5,10 @@
 void DrumData::add_drum(std::string name, int note)
 {
 	m_kit.drums.emplace_back(name, note);
-	m_lanes.emplace_back(m_beats * m_beat_divisions);
+	for (auto& pattern : m_patterns)
+	{
+		pattern.lanes.emplace_back(m_beats * m_beat_divisions);
+	}
 }
 
 void DrumData::set_swing(float swing)
@@ -16,14 +19,14 @@ void DrumData::set_swing(float swing)
 
 void DrumData::set_hit(int lane, int division, int velocity)
 {
-	m_lanes[lane].velocity[division] = velocity;
+	m_patterns[m_current_pattern].lanes[lane].velocity[division] = velocity;
 	m_listener.changed();
 	update_events();
 }
 
 int DrumData::get_hit(int lane, int division) const
 {
-	return m_lanes[lane].velocity[division];
+	return m_patterns[m_current_pattern].lanes[lane].velocity[division];
 }
 
 std::string DrumData::get_lane_name(int lane) const
@@ -48,7 +51,7 @@ void DrumData::set_lane_note(int lane, int note)
 
 void DrumData::clear_hits()
 {
-	for (auto& lane : m_lanes)
+	for (auto& lane : m_patterns[m_current_pattern].lanes)
 	{
 		for (auto& v : lane.velocity)
 		{
@@ -110,11 +113,12 @@ void DrumData::update_events()
 	double beat_from_division = 1. / m_beat_divisions;
 	double swing_adjust1 = (0.5 - m_swing) * 2. * beat_from_division;
 	double swing_adjust2 = -swing_adjust1;
+	auto& lanes = m_patterns[m_current_pattern].lanes;
 	for (int division = 0; division < total_divisions(); ++division)
 	{
-		for (int lane = 0; lane < m_lanes.size(); ++lane)
+		for (int lane = 0; lane < lanes.size(); ++lane)
 		{
-			if (m_lanes[lane].velocity[division] > 0)
+			if (lanes[lane].velocity[division] > 0)
 			{
 				DrumEvent e;
 				e.beat_time = beat_from_division * division;
@@ -127,7 +131,7 @@ void DrumData::update_events()
 					e.beat_time += swing_adjust1;
 				}
 				e.lane = lane;
-				e.velocity = m_lanes[lane].velocity[division];
+				e.velocity = lanes[lane].velocity[division];
 				m_events.push_back(e);
 			}
 		}
@@ -136,13 +140,15 @@ void DrumData::update_events()
 
 std::ostream& operator<<(std::ostream& out, const DrumData& data)
 {
+	auto& lanes = data.m_patterns[0].lanes;
+
 	out << data.m_beats << " " << data.m_beat_divisions << "\n";
-	out << data.m_lanes.size() << "\n";
-	for (int i = 0; i < data.m_lanes.size(); ++i)
+	out << lanes.size() << "\n";
+	for (int i = 0; i < lanes.size(); ++i)
 	{
 		out << data.m_kit.drums[i].name << "\n";
 		out << data.m_kit.drums[i].note << "\n";
-		for (auto v : data.m_lanes[i].velocity)
+		for (auto v : lanes[i].velocity)
 		{
 			out << v << " ";
 		}
@@ -157,7 +163,8 @@ std::istream& operator>>(std::istream& in, DrumData& data)
 	in >> data.m_beats >> data.m_beat_divisions;
 	int lane_count;
 	in >> lane_count;
-	data.m_lanes.clear();
+	auto& lanes = data.m_patterns[0].lanes;
+	lanes.clear();
 	for (int i = 0; i < lane_count; ++i)
 	{
 		std::string name;
@@ -167,7 +174,7 @@ std::istream& operator>>(std::istream& in, DrumData& data)
 		in >> note;
 		data.add_drum(name, note);
 		debug << "name " << name << " note" << note << "\n";
-		for (auto& v : data.m_lanes.back().velocity)
+		for (auto& v : lanes.back().velocity)
 		{
 			in >> v;
 		}
