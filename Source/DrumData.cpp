@@ -11,6 +11,24 @@ void DrumData::add_drum(std::string name, int note)
 	}
 }
 
+void DrumData::add_pattern()
+{
+	//m_patterns.emplace_back((int)m_kit.drums.size(), m_beats * m_beat_divisions);
+	m_patterns.emplace_back(m_patterns[m_current_pattern]);
+	m_listener.changed();
+}
+
+void DrumData::set_current_pattern(int pattern) 
+{
+	if (pattern < 0 || pattern >= m_patterns.size())
+	{
+		return;
+	}
+	m_current_pattern = pattern;
+	update_events();
+	m_listener.changed();
+}
+
 void DrumData::set_swing(float swing)
 {
 	m_swing = swing;
@@ -91,20 +109,52 @@ std::string DrumData::to_json() const
 		d["note"] = drum.note;
 		j["kit"]["drums"].push_back(d);
 	}
-	j["lanes"] = json::array();
-	for (int i = 0; i < m_lanes.size(); ++i)
+	j["patterns"] = json::array();
+	for (auto& pattern : m_patterns)
 	{
-		json lane;
-		lane["name"] = m_kit.drums[i].name;
-		lane["note"] = m_kit.drums[i].note;
-		lane["velocity"] = m_lanes[i].velocity;
-		j["lanes"].push_back(lane);
+		json p;
+		p["lanes"] = json::array();
+		for (auto& lane : pattern.lanes)
+		{
+			json l;
+			l["velocity"] = lane.velocity;
+			p["lanes"].push_back(l);
+		}
+		j["patterns"].push_back(p);
 	}
-	return j.dump();
+	return j.dump(3);
 }
 
-void DrumData::from_json(std::string const& json)
+void DrumData::from_json(std::string const& json_string)
 {
+	using json = nlohmann::json;
+	auto j = json::parse(json_string);
+	m_beats = j["beats"];
+	m_beat_divisions = j["beat_divisions"];
+	m_swing = j["swing"];
+	m_kit.name = j["kit"]["name"];
+	m_kit.drums.clear();
+	for (auto& d : j["kit"]["drums"])
+	{
+		m_kit.drums.emplace_back(d["name"], d["note"]);
+	}
+	m_patterns.clear();
+	for (auto& p : j["patterns"])
+	{
+		DrumPattern pattern;
+		for (auto& l : p["lanes"])
+		{
+			DrumLane lane(0);
+			for (auto v : l["velocity"])
+			{
+				lane.velocity.push_back(v);
+			}
+			pattern.lanes.push_back(lane);
+		}
+		m_patterns.push_back(pattern);
+	}
+	m_listener.changed();
+	update_events();
 }
 
 void DrumData::update_events()
@@ -165,6 +215,7 @@ std::istream& operator>>(std::istream& in, DrumData& data)
 	in >> lane_count;
 	auto& lanes = data.m_patterns[0].lanes;
 	lanes.clear();
+	data.m_kit.drums.clear();
 	for (int i = 0; i < lane_count; ++i)
 	{
 		std::string name;

@@ -27,6 +27,14 @@ struct DrumLane
 
 struct DrumPattern
 {
+	DrumPattern() = default;
+	DrumPattern(int drum_count, int divisions)
+	{
+		for (int i = 0; i < drum_count; ++i)
+		{
+			lanes.emplace_back(divisions);
+		}
+	}
 	std::vector<DrumLane> lanes;
 };
 
@@ -48,9 +56,13 @@ class DrumData
 public:
     DrumData(int beats, int beat_divisions, DrumDataListener &listener)
 		: m_beats(beats), m_beat_divisions(beat_divisions), m_listener(listener), m_patterns(1)
-    {}
+    {
+	}
 
     void add_drum(std::string name, int note);
+
+	void add_pattern();
+	void set_current_pattern(int pattern);
 
     int beats() const { return m_beats; }
     int beat_divisions() const { return m_beat_divisions; }

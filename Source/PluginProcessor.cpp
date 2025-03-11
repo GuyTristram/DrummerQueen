@@ -227,9 +227,7 @@ juce::AudioProcessorEditor* DrummerQueenAudioProcessor::createEditor()
 //==============================================================================
 void DrummerQueenAudioProcessor::getStateInformation (juce::MemoryBlock& destData)
 {
-    std::ostringstream out;
-    out << m_data;
-	auto str = out.str();
+	auto str = m_data.to_json();
     std::ofstream debug("c:/Temp/getStateInformation.txt");
     debug << str;
     destData.append(str.c_str(), str.size());
@@ -244,8 +242,15 @@ void DrummerQueenAudioProcessor::setStateInformation (const void* data, int size
 
     std::string state(static_cast<const char*>(data), sizeInBytes);
     debug << state;
-    std::istringstream in(state);
-	in >> m_data;
+    if (state[0] == '{')
+	{
+		m_data.from_json(state);
+	}
+    else
+    {
+        std::istringstream in(state);
+        in >> m_data;
+    }
 }
 
 //==============================================================================
