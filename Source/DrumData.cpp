@@ -26,21 +26,22 @@ void DrumData::set_current_pattern(int pattern)
 		return;
 	}
 	m_current_pattern = pattern;
-	update_events();
-	m_listener.changed();
 }
 
 void DrumData::set_swing(float swing)
 {
 	m_swing = swing;
-	update_events();
+	for (int i = 0; i < m_patterns.size(); ++i)
+	{
+		update_events(i);
+	}
 }
 
 void DrumData::set_hit(int lane, int division, int velocity)
 {
 	m_patterns[m_current_pattern].lanes[lane].velocity[division] = velocity;
 	m_listener.changed();
-	update_events();
+	update_events(m_current_pattern);
 }
 
 int DrumData::get_hit(int lane, int division) const
@@ -77,12 +78,12 @@ void DrumData::clear_hits()
 			v = 0;
 		}
 	}
-	update_events();
+	update_events(m_current_pattern);
 }
 
 void DrumData::get_events(double start_time, double end_time, int num_samples, juce::MidiBuffer& midiMessages)
 {
-	for (auto& e : m_events)
+	for (auto& e : m_patterns[m_current_pattern].m_events)
 	{
 		if (e.beat_time >= start_time && e.beat_time < end_time)
 		{
@@ -140,6 +141,7 @@ void DrumData::from_json(std::string const& json_string)
 		m_kit.drums.emplace_back(d["name"], d["note"]);
 	}
 	m_patterns.clear();
+	int pattern_count = 0;
 	for (auto& p : j["patterns"])
 	{
 		DrumPattern pattern;
@@ -153,18 +155,18 @@ void DrumData::from_json(std::string const& json_string)
 			pattern.lanes.push_back(lane);
 		}
 		m_patterns.push_back(pattern);
+		update_events(pattern_count);
+		++pattern_count;
 	}
-	m_listener.changed();
-	update_events();
 }
 
-void DrumData::update_events()
+void DrumData::update_events(int pattern)
 {
-	m_events.clear();
+	m_patterns[pattern].m_events.clear();
 	double beat_from_division = 1. / m_beat_divisions;
 	double swing_adjust1 = (0.5 - m_swing) * 2. * beat_from_division;
 	double swing_adjust2 = -swing_adjust1;
-	auto& lanes = m_patterns[m_current_pattern].lanes;
+	auto& lanes = m_patterns[pattern].lanes;
 	for (int division = 0; division < total_divisions(); ++division)
 	{
 		for (int lane = 0; lane < lanes.size(); ++lane)
@@ -183,7 +185,7 @@ void DrumData::update_events()
 				}
 				e.lane = lane;
 				e.velocity = lanes[lane].velocity[division];
-				m_events.push_back(e);
+				m_patterns[pattern].m_events.push_back(e);
 			}
 		}
 	}
@@ -231,6 +233,6 @@ std::istream& operator>>(std::istream& in, DrumData& data)
 			in >> v;
 		}
 	}
-	data.update_events();
+	data.update_events(0);
 	return in;
 }

@@ -25,6 +25,13 @@ struct DrumLane
     std::vector<int> velocity;
 };
 
+struct DrumEvent
+{
+	double beat_time;
+	int lane;
+	int velocity;
+};
+
 struct DrumPattern
 {
 	DrumPattern() = default;
@@ -36,13 +43,7 @@ struct DrumPattern
 		}
 	}
 	std::vector<DrumLane> lanes;
-};
-
-struct DrumEvent
-{
-    double beat_time;
-    int lane;
-	int velocity;
+	std::vector<DrumEvent> m_events;
 };
 
 class DrumDataListener
@@ -93,11 +94,10 @@ public:
 	friend std::istream& operator>>(std::istream& in, DrumData& data);
 
 private:
-	void update_events();
+	void update_events(int pattern);
 	DrumKit m_kit;
 	std::vector<DrumPattern> m_patterns;
 	int m_current_pattern = 0;
-	std::vector<DrumEvent> m_events;
     int m_beats = 4;
     int m_beat_divisions = 4;
 	float m_swing = 0.5f;
