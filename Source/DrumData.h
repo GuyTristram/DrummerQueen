@@ -61,13 +61,15 @@ public:
 
     void add_drum(std::string name, int note);
 
-	void add_pattern();
+	int add_pattern();
 	void set_current_pattern(int pattern);
+	int get_current_pattern() const { return m_current_pattern; }
 
     int beats() const { return m_beats; }
     int beat_divisions() const { return m_beat_divisions; }
 	int total_divisions() const { return m_beats * m_beat_divisions; }
 	int lane_count() const { return m_kit.drums.size(); }
+	int pattern_count() const { return m_patterns.size(); }
 
 	void set_swing(float swing);
 

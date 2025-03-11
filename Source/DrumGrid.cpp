@@ -77,9 +77,16 @@ void DrumGrid::mouseDown(const juce::MouseEvent& event)
         int beat = pos.getX() / m_note_width;
         if (beat >= 0 && beat < m_data.total_divisions())
         {
-            const int current_vel = m_data.get_hit(lane, beat);
-            const int new_vel = current_vel != m_new_velocity ? m_new_velocity : 0;
-            m_data.set_hit(lane, beat, new_vel);
+			if (event.mods.isLeftButtonDown())
+			{
+                const int current_vel = m_data.get_hit(lane, beat);
+                const int new_vel = current_vel != m_new_velocity ? m_new_velocity : 0;
+                m_data.set_hit(lane, beat, new_vel);
+            }
+			else if (event.mods.isMiddleButtonDown())
+			{
+				m_data.set_hit(lane, beat, 0);
+			}
          }
     }
     repaint();
@@ -106,4 +113,24 @@ void VelocityButton::paintButton(juce::Graphics& g, bool shouldDrawButtonAsHighl
     //g.fillRoundedRectangle(border, border, getWidth() - border * 2, getHeight() - border * 2, size / 2);
 	g.fillEllipse(border, border, getWidth() - border * 2, getHeight() - border * 2);
 
+}
+
+void PatternButton::paintButton(juce::Graphics& g, bool shouldDrawButtonAsHighlighted, bool shouldDrawButtonAsDown)
+{
+    g.fillAll(juce::Colours::black);
+    if (getToggleState())
+    {
+        g.setColour(juce::Colours::white);
+    }
+    else
+    {
+        g.setColour(juce::Colours::grey);
+    }
+
+    int max_size = std::min(getWidth(), getHeight()) - 8;
+
+    int min_size = max_size / 7;
+
+    std::string str = std::to_string(m_pattern);
+    g.drawText(str.c_str(), getLocalBounds(), juce::Justification::centred);
 }

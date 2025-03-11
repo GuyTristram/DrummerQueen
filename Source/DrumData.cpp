@@ -11,11 +11,12 @@ void DrumData::add_drum(std::string name, int note)
 	}
 }
 
-void DrumData::add_pattern()
+int DrumData::add_pattern()
 {
 	//m_patterns.emplace_back((int)m_kit.drums.size(), m_beats * m_beat_divisions);
 	m_patterns.emplace_back(m_patterns[m_current_pattern]);
 	m_listener.changed();
+	return m_patterns.size() - 1;
 }
 
 void DrumData::set_current_pattern(int pattern) 

@@ -21,11 +21,21 @@ class DrumData;
 class VelocityButton : public juce::ToggleButton
 {
 public:
-	VelocityButton(int velocity) : m_velocity(velocity) {}
+    VelocityButton(int velocity) : m_velocity(velocity) {}
     void paintButton(juce::Graphics& g,
         bool	shouldDrawButtonAsHighlighted,
         bool	shouldDrawButtonAsDown) override;
-	int m_velocity;
+    int m_velocity;
+};
+
+class PatternButton : public juce::ToggleButton
+{
+public:
+    PatternButton(int pattern) : m_pattern(pattern) {}
+    void paintButton(juce::Graphics& g,
+        bool	shouldDrawButtonAsHighlighted,
+        bool	shouldDrawButtonAsDown) override;
+    int m_pattern;
 };
 
 class DrumGrid : public juce::Component

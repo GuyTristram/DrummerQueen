@@ -53,23 +53,20 @@ public:
     void set_lane_data();
     void delete_lane();
 
-	void set_editor_visible(bool visible)
-	{
-		m_name_editor.setVisible(visible);
-		m_note_editor.setVisible(visible);
-		m_set_button.setVisible(visible);
-		m_delete_button.setVisible(visible);
-		m_keyboard.setVisible(visible);
-	}
+	void set_editor_visible(bool visible);
 
 private:
     void sliderValueChanged(juce::Slider* slider) override;
+    void update_pattern_buttons();
+	DrumData& data() { return audioProcessor.m_data; }
     // This reference is provided as a quick way for your editor to
     // access the processor object that created it.
     DrummerQueenAudioProcessor& audioProcessor;
 
     DrumGrid m_grid;
     std::vector<std::unique_ptr<juce::ToggleButton>> m_velocity_buttons;
+    std::vector<std::unique_ptr<juce::ToggleButton>> m_pattern_buttons;
+    juce::TextButton m_add_pattern_button;
     std::vector<std::unique_ptr<juce::TextButton>> m_lane_name_buttons;
     juce::Slider m_swing_slider;
 
@@ -79,8 +76,9 @@ private:
 	juce::TextEditor m_name_editor;
 	juce::TextEditor m_note_editor;
     juce::TextButton m_set_button;
-	juce::TextButton m_delete_button;
-	void edit_lane(int lane);
+    juce::TextButton m_delete_button;
+    juce::TextButton m_cancel_button;
+    void edit_lane(int lane);
  
 	juce::TextButton m_add_lane_button;
     int m_velocity = 127;
