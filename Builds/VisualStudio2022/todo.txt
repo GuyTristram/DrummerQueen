@@ -1,2 +1,6 @@
-Show drum names
-load/save 
+Proper sequence interface
+All data affecting actions support undo/redo
+Time signature support
+Save/load kits
+Export/Import patterns as MIDI
+Fix the bug where the first note is played from the last pattern

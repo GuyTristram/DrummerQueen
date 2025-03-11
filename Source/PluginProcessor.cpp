@@ -193,17 +193,6 @@ void DrummerQueenAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer,
             auto beat_pos_begin = pos->getPpqPosition();
             if (beat_pos_begin)
             {
-				if (m_data.is_playing_sequence())
-				{
-					auto const& sequence = m_data.get_sequence();
-					auto sequence_length = sequence.size();
-                    if (sequence_length)
-                    {
-						auto sequence_pos = fmod(*beat_pos_begin / m_data.beats(), sequence_length);
-						auto sequence_pos_int = static_cast<int>(sequence_pos);
-                        m_data.set_current_pattern(sequence[sequence_pos_int]);
-                    }
-				}
                 m_bar_pos_beats = fmod(*beat_pos_begin, static_cast<double>(m_data.beats()));
                 auto bpm = pos->getBpm();
                 if (bpm)
@@ -212,11 +201,34 @@ void DrummerQueenAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer,
 					auto buffer_length_beats = buffer_length_seconds / beat_length_seconds;
                     double end_pos_beats = m_bar_pos_beats + buffer_length_beats;
 					double end_pos_wrap = fmod(end_pos_beats, static_cast<double>(m_data.beats()));
+                    if (m_data.is_playing_sequence())
+                    {
+                        auto const& sequence = m_data.get_sequence();
+                        auto sequence_length = sequence.size();
+                        if (sequence_length)
+                        {
+                            auto sequence_pos = fmod(*beat_pos_begin / m_data.beats(), sequence_length);
+                            auto sequence_pos_int = static_cast<int>(sequence_pos);
+                            m_data.set_current_pattern(sequence[sequence_pos_int]);
+                        }
+                    }
+                    m_data.get_events(m_bar_pos_beats, end_pos_beats, num_samples, midiMessages);
+                    if (m_data.is_playing_sequence())
+                    {
+                        auto const& sequence = m_data.get_sequence();
+                        auto sequence_length = sequence.size();
+                        if (sequence_length)
+                        {
+                            auto beat_pos_end = *beat_pos_begin + buffer_length_beats;
+                            auto sequence_pos = fmod(beat_pos_end / m_data.beats(), sequence_length);
+                            auto sequence_pos_int = static_cast<int>(sequence_pos);
+                            m_data.set_current_pattern(sequence[sequence_pos_int]);
+                        }
+                    }
                     if (end_pos_wrap < m_bar_pos_beats)
                     {
                         m_data.get_events(m_bar_pos_beats - m_data.beats(), end_pos_wrap, num_samples, midiMessages);
                     }
-                    m_data.get_events(m_bar_pos_beats, end_pos_beats, num_samples, midiMessages);
                 }
                 sendChangeMessage();
             }
