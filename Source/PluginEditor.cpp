@@ -43,6 +43,18 @@ DrummerQueenAudioProcessorEditor::DrummerQueenAudioProcessorEditor (DrummerQueen
 	m_add_pattern_button.onClick = [this] {data().set_current_pattern(data().add_pattern()); update_pattern_buttons(); };
     addAndMakeVisible(m_add_pattern_button);
 
+    addAndMakeVisible(m_sequence_editor);
+	m_sequence_editor.onTextChange = [this] {data().set_sequence_str(m_sequence_editor.getText().toStdString()); };
+	addAndMakeVisible(m_play_sequence_button);
+	m_play_sequence_button.onClick = [this] {data().play_sequence(m_play_sequence_button.getToggleState()); };
+
+	m_undo_button.setButtonText("Undo");
+	addAndMakeVisible(m_undo_button);
+    m_undo_button.onClick = [this] {data().undo(); m_grid.repaint(); };
+	m_redo_button.setButtonText("Redo");
+	addAndMakeVisible(m_redo_button);
+    m_redo_button.onClick = [this] {data().redo(); m_grid.repaint(); };
+
     m_swing_slider.setSliderStyle(juce::Slider::LinearHorizontal);
     m_swing_slider.setRange(0.0, 1.0, 0.05);
     m_swing_slider.setTextBoxStyle(juce::Slider::NoTextBox, false, 90, 0);
@@ -119,6 +131,9 @@ void DrummerQueenAudioProcessorEditor::resized()
 	int grid_bottom = m_grid_top + height;
 	int grid_right = m_grid_left + width;
 
+	m_undo_button.setBounds(8, 8, 40, 24);
+	m_redo_button.setBounds(8, 32, 40, 24);
+
     int x = m_grid_left;
     for (auto& vb : m_velocity_buttons)
     {
@@ -149,6 +164,9 @@ void DrummerQueenAudioProcessorEditor::resized()
 		x += 26;
 	}
 	m_add_pattern_button.setBounds(x, y, 24, 24);
+
+	m_play_sequence_button.setBounds(8, grid_bottom + 36, 24, 24);
+	m_sequence_editor.setBounds(m_grid_left, grid_bottom + 36, width, 24);
 }
 
 void DrummerQueenAudioProcessorEditor::handleNoteOn(juce::MidiKeyboardState* source, int midiChannel, int midiNoteNumber, float velocity)

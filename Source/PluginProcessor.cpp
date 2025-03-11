@@ -193,6 +193,17 @@ void DrummerQueenAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer,
             auto beat_pos_begin = pos->getPpqPosition();
             if (beat_pos_begin)
             {
+				if (m_data.is_playing_sequence())
+				{
+					auto const& sequence = m_data.get_sequence();
+					auto sequence_length = sequence.size();
+                    if (sequence_length)
+                    {
+						auto sequence_pos = fmod(*beat_pos_begin / m_data.beats(), sequence_length);
+						auto sequence_pos_int = static_cast<int>(sequence_pos);
+                        m_data.set_current_pattern(sequence[sequence_pos_int]);
+                    }
+				}
                 m_bar_pos_beats = fmod(*beat_pos_begin, static_cast<double>(m_data.beats()));
                 auto bpm = pos->getBpm();
                 if (bpm)

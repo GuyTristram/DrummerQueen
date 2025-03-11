@@ -28,6 +28,25 @@ void DrumData::set_current_pattern(int pattern)
 	m_current_pattern = pattern;
 }
 
+void DrumData::set_sequence_str(std::string const& sequence)
+{
+	m_sequence_str = sequence;
+	m_sequence.clear();
+	for (auto c : m_sequence_str)
+	{
+		int v = c - '1';
+		if (v >= 0 && v < m_patterns.size())
+		{
+			m_sequence.push_back(v);
+		}
+	}
+}
+
+void DrumData::play_sequence(bool ps)
+{
+	m_play_sequence = ps;
+}
+
 void DrumData::set_swing(float swing)
 {
 	m_swing = swing;
@@ -39,9 +58,18 @@ void DrumData::set_swing(float swing)
 
 void DrumData::set_hit(int lane, int division, int velocity)
 {
-	m_patterns[m_current_pattern].lanes[lane].velocity[division] = velocity;
-	m_listener.changed();
-	update_events(m_current_pattern);
+	int old_velocity = m_patterns[m_current_pattern].lanes[lane].velocity[division];
+	do_action(
+		[this, lane, division, velocity, pattern = m_current_pattern]
+		{
+			m_patterns[pattern].lanes[lane].velocity[division] = velocity;
+			update_events(pattern);
+		},
+		[this, lane, division, old_velocity, pattern = m_current_pattern]
+		{
+			m_patterns[pattern].lanes[lane].velocity[division] = old_velocity;
+			update_events(pattern);
+		});
 }
 
 int DrumData::get_hit(int lane, int division) const
@@ -189,6 +217,37 @@ void DrumData::update_events(int pattern)
 			}
 		}
 	}
+}
+
+void DrumData::do_action(std::function<void()> do_action, std::function<void()> undo_action)
+{
+	m_undo_stack.push_back({ do_action, undo_action });
+	do_action();
+	m_redo_stack.clear();
+}
+
+void DrumData::undo()
+{
+	if (m_undo_stack.empty())
+	{
+		return;
+	}
+	auto action = m_undo_stack.back();
+	m_undo_stack.pop_back();
+	action.undo_action();
+	m_redo_stack.push_back(action);
+}
+
+void DrumData::redo()
+{
+	if (m_redo_stack.empty())
+	{
+		return;
+	}
+	auto action = m_redo_stack.back();
+	m_redo_stack.pop_back();
+	action.do_action();
+	m_undo_stack.push_back(action);
 }
 
 std::ostream& operator<<(std::ostream& out, const DrumData& data)

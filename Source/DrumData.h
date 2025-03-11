@@ -52,6 +52,12 @@ public:
 	virtual void changed() = 0;
 };
 
+struct Action
+{
+	std::function<void()> do_action;
+	std::function<void()> undo_action;
+};
+
 class DrumData
 {
 public:
@@ -65,6 +71,11 @@ public:
 	int add_pattern();
 	void set_current_pattern(int pattern);
 	int get_current_pattern() const { return m_current_pattern; }
+
+	void set_sequence_str(std::string const& sequence);
+	void play_sequence(bool ps);
+	bool is_playing_sequence() const { return m_play_sequence; }
+	std::vector<int> const& get_sequence() const { return m_sequence; }
 
     int beats() const { return m_beats; }
     int beat_divisions() const { return m_beat_divisions; }
@@ -93,6 +104,9 @@ public:
 	friend std::ostream& operator<<(std::ostream& out, const DrumData& data);
 	friend std::istream& operator>>(std::istream& in, DrumData& data);
 
+	void undo();
+	void redo();
+
 private:
 	void update_events(int pattern);
 	DrumKit m_kit;
@@ -102,5 +116,14 @@ private:
     int m_beat_divisions = 4;
 	float m_swing = 0.5f;
 
+	std::string m_sequence_str;
+	std::vector<int> m_sequence;
+	bool m_play_sequence = false;
+
 	DrumDataListener& m_listener;
+
+	std::vector<Action> m_undo_stack;
+	std::vector<Action> m_redo_stack;
+
+	void do_action(std::function<void()> do_action, std::function<void()> undo_action);
 };

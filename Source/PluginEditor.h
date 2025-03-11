@@ -70,6 +70,12 @@ private:
     std::vector<std::unique_ptr<juce::TextButton>> m_lane_name_buttons;
     juce::Slider m_swing_slider;
 
+    juce::TextButton m_undo_button;
+    juce::TextButton m_redo_button;
+
+    juce::TextEditor m_sequence_editor;
+	juce::ToggleButton m_play_sequence_button;
+
     int m_lane_editting = -1;
     juce::MidiKeyboardState m_keyboard_state;
 	juce::MidiKeyboardComponent m_keyboard;
