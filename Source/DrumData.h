@@ -1,11 +1,3 @@
-/*
-  ==============================================================================
-
-    This file contains the basic framework code for a JUCE plugin editor.
-
-  ==============================================================================
-*/
-
 #pragma once
 
 #include <JuceHeader.h>
@@ -14,16 +6,23 @@
 #include <memory>
 #include <string>
 #include <fstream>
-//==============================================================================
-/**
-*/
-class DrumLane
+
+struct DrumInfo
 {
-public:
-    DrumLane(std::string name, int note, int divisions) : m_name(name), m_note(note) { m_velocity.resize(divisions); }
-    std::string m_name;
-    int m_note;
-    std::vector<int> m_velocity;
+	std::string name;
+	int note;
+};
+
+struct DrumKit
+{
+	std::string name;
+	std::vector<DrumInfo> drums;
+};
+
+struct DrumLane
+{
+	DrumLane(int divisions) : velocity(divisions) {}
+    std::vector<int> velocity;
 };
 
 struct DrumEvent
@@ -46,10 +45,7 @@ public:
 		: m_beats(beats), m_beat_divisions(beat_divisions), m_listener(listener)
     {}
 
-    void add_drum(std::string name, int note)
-    {
-        m_lanes.emplace_back(name, note, m_beats * m_beat_divisions);
-    }
+    void add_drum(std::string name, int note);
 
     int beats() const { return m_beats; }
     int beat_divisions() const { return m_beat_divisions; }
@@ -76,6 +72,7 @@ public:
 
 private:
 	void update_events();
+	DrumKit m_kit;
     std::vector<DrumLane> m_lanes;
 	std::vector<DrumEvent> m_events;
     int m_beats = 4;
