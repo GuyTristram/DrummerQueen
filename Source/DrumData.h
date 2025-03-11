@@ -67,6 +67,9 @@ public:
 
 	void get_events(double start_time, double end_time, int num_samples, juce::MidiBuffer& midiMessages);
 
+	std::string to_json() const;
+	void from_json(std::string const& json);
+
 	friend std::ostream& operator<<(std::ostream& out, const DrumData& data);
 	friend std::istream& operator>>(std::istream& in, DrumData& data);
 

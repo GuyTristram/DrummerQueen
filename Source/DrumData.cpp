@@ -1,7 +1,6 @@
-
-
 #include "DrumData.h"
 
+#include "json.hpp"
 
 void DrumData::add_drum(std::string name, int note)
 {
@@ -70,6 +69,39 @@ void DrumData::get_events(double start_time, double end_time, int num_samples, j
 			midiMessages.addEvent(juce::MidiMessage::noteOn(1, m_kit.drums[e.lane].note, juce::uint8(e.velocity)), sample_time);
 		}
 	}
+}
+
+std::string DrumData::to_json() const
+{
+	using json = nlohmann::json;
+	json j;
+	j["beats"] = m_beats;
+	j["beat_divisions"] = m_beat_divisions;
+	j["swing"] = m_swing;
+	j["kit"] = json::object();
+	j["kit"]["name"] = m_kit.name;
+	j["kit"]["drums"] = json::array();
+	for (auto& drum : m_kit.drums)
+	{
+		json d;
+		d["name"] = drum.name;
+		d["note"] = drum.note;
+		j["kit"]["drums"].push_back(d);
+	}
+	j["lanes"] = json::array();
+	for (int i = 0; i < m_lanes.size(); ++i)
+	{
+		json lane;
+		lane["name"] = m_kit.drums[i].name;
+		lane["note"] = m_kit.drums[i].note;
+		lane["velocity"] = m_lanes[i].velocity;
+		j["lanes"].push_back(lane);
+	}
+	return j.dump();
+}
+
+void DrumData::from_json(std::string const& json)
+{
 }
 
 void DrumData::update_events()
