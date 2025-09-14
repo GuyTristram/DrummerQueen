@@ -50,10 +50,10 @@ DrummerQueenAudioProcessorEditor::DrummerQueenAudioProcessorEditor (DrummerQueen
 
 	m_undo_button.setButtonText("Undo");
 	addAndMakeVisible(m_undo_button);
-    m_undo_button.onClick = [this] {data().undo(); m_grid.repaint(); };
+    m_undo_button.onClick = [this] {data().undo(); m_grid.repaint(); resize_grid(); };
 	m_redo_button.setButtonText("Redo");
 	addAndMakeVisible(m_redo_button);
-    m_redo_button.onClick = [this] {data().redo(); m_grid.repaint(); };
+    m_redo_button.onClick = [this] {data().redo(); m_grid.repaint(); resize_grid(); };
 
     m_swing_slider.setSliderStyle(juce::Slider::LinearHorizontal);
     m_swing_slider.setRange(0.0, 1.0, 0.05);
@@ -92,6 +92,28 @@ DrummerQueenAudioProcessorEditor::DrummerQueenAudioProcessorEditor (DrummerQueen
 	m_keyboard_state.addListener(this);
 	addAndMakeVisible(m_keyboard);
 
+    add_time_signature("4/4", 4, 4);
+    add_time_signature("3/4", 3, 4);
+    add_time_signature("4/3", 4, 3);
+	select_time_signature();
+    m_time_signature_box.onChange = [this]
+    {
+        int i = m_time_signature_box.getSelectedId() - 1;
+        data().set_time_signature(m_time_signatures[i].beats, m_time_signatures[i].beat_divisions);
+        resize_grid();
+        m_grid.repaint();
+    };
+    addAndMakeVisible(m_time_signature_box);
+ 
+    m_drag_button.setButtonText("Drag");
+	m_drag_button.onStartDrag = [this]
+		{
+            juce::File tempDirectory = juce::File::getSpecialLocation(juce::File::tempDirectory);
+			juce::File tempFile = tempDirectory.getChildFile("pattern.midi");
+			juce::MidiFile midi_file;
+            juce::DragAndDropContainer::performExternalDragDropOfFiles({ "DrummerQueen.drum" }, true);
+		};
+    addAndMakeVisible(m_drag_button);
     set_editor_visible(false);
 
 
@@ -121,15 +143,22 @@ void DrummerQueenAudioProcessorEditor::paint (juce::Graphics& g)
 	}
 }
 
+void DrummerQueenAudioProcessorEditor::resize_grid()
+{
+    int width = data().total_divisions() * m_note_width + 1;
+    int height = data().lane_count() * m_note_height + 1;
+    m_grid.setBounds(m_grid_left, m_grid_top, width, height);
+}
+
+
 void DrummerQueenAudioProcessorEditor::resized()
 {
     // This is generally where you'll want to lay out the positions of any
     // subcomponents in your editor..
 	int width = data().total_divisions() * m_note_width;
 	int height = data().lane_count() * m_note_height;
-    m_grid.setBounds(m_grid_left, m_grid_top, width, height);
+    resize_grid();
 	int grid_bottom = m_grid_top + height;
-	int grid_right = m_grid_left + width;
 
 	m_undo_button.setBounds(8, 8, 40, 24);
 	m_redo_button.setBounds(8, 32, 40, 24);
@@ -140,6 +169,8 @@ void DrummerQueenAudioProcessorEditor::resized()
 		vb->setBounds(x, 32, 24, 24);
 		x += 26;
     }
+    x += 80;
+    m_time_signature_box.setBounds(x, 32, 64, 24);
     int y = 64;
     for (auto& name : m_lane_name_buttons)
     {
@@ -167,6 +198,8 @@ void DrummerQueenAudioProcessorEditor::resized()
 
 	m_play_sequence_button.setBounds(8, grid_bottom + 36, 24, 24);
 	m_sequence_editor.setBounds(m_grid_left, grid_bottom + 36, width, 24);
+
+    m_drag_button.setBounds(8, grid_bottom + 64, 64, 24);
 }
 
 void DrummerQueenAudioProcessorEditor::handleNoteOn(juce::MidiKeyboardState* source, int midiChannel, int midiNoteNumber, float velocity)
@@ -246,4 +279,22 @@ void DrummerQueenAudioProcessorEditor::edit_lane(int lane)
 	auto note_name = std::format("{}", data().get_lane_note(lane));
 	m_note_editor.setText(note_name, juce::dontSendNotification);
     set_editor_visible(true);
+}
+
+void DrummerQueenAudioProcessorEditor::add_time_signature(char const* name, int beats, int beat_divisions)
+{
+	m_time_signature_box.addItem(name, m_time_signatures.size() + 1);
+	m_time_signatures.push_back({ beats, beat_divisions });
+}
+
+void DrummerQueenAudioProcessorEditor::select_time_signature()
+{
+	for (int i = 0; i < m_time_signatures.size(); ++i)
+	{
+		if (m_time_signatures[i].beats == data().beats() && m_time_signatures[i].beat_divisions == data().beat_divisions())
+		{
+			m_time_signature_box.setSelectedId(i + 1, juce::dontSendNotification);
+			return;
+		}
+	}
 }

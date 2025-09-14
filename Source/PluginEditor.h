@@ -16,6 +16,15 @@
 #include <memory>
 
 
+class DragButton : public juce::TextButton
+{
+public:
+    std::function< void()> 	onStartDrag;
+
+protected:
+    void mouseDown(const juce::MouseEvent& event) override { TextButton::mouseDown(event);  onStartDrag(); }
+};
+
 //==============================================================================
 /**
 */
@@ -31,6 +40,7 @@ public:
 
     //==============================================================================
     void paint (juce::Graphics&) override;
+    void resize_grid();
     void resized() override;
 
     void changeListenerCallback(juce::ChangeBroadcaster* source) override
@@ -88,6 +98,14 @@ private:
  
 	juce::TextButton m_add_lane_button;
     int m_velocity = 127;
+
+	juce::ComboBox m_time_signature_box;
+    std::vector<TimeSignature> m_time_signatures;
+	void add_time_signature(char const *name, int beats, int beat_divisions);
+	void select_time_signature();
+
+    DragButton m_drag_button;
+
 
     int m_grid_top = 64;
     int m_grid_left = 80;

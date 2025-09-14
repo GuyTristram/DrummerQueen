@@ -47,9 +47,45 @@ void DrumData::play_sequence(bool ps)
 	m_play_sequence = ps;
 }
 
+void DrumData::set_time_signature(int beats, int beat_divisions)
+{
+	if (beats <= 0 || beat_divisions <= 0)
+	{
+		return;
+	}
+	int old_beats = m_beats;
+	int old_beat_divisions = m_beat_divisions;
+	do_action(
+		[this, beats, beat_divisions]
+		{
+			m_beats = beats;
+			m_beat_divisions = beat_divisions;
+			for (auto& pattern : m_patterns)
+			{
+				for (auto& lane : pattern.lanes)
+				{
+					lane.velocity.resize(m_beats * m_beat_divisions);
+				}
+			}
+			update_events();
+		},
+		[this, old_beats, old_beat_divisions, patterns = m_patterns]
+		{
+			m_beats = old_beats;
+			m_beat_divisions = old_beat_divisions;
+			m_patterns = patterns;
+			update_events();
+		});
+}
+
 void DrumData::set_swing(float swing)
 {
 	m_swing = swing;
+	update_events();
+}
+
+void DrumData::update_events()
+{
 	for (int i = 0; i < m_patterns.size(); ++i)
 	{
 		update_events(i);

@@ -32,6 +32,12 @@ struct DrumEvent
 	int velocity;
 };
 
+struct TimeSignature
+{
+	int beats = 4;
+	int beat_divisions = 4;
+};
+
 struct DrumPattern
 {
 	DrumPattern() = default;
@@ -80,6 +86,7 @@ public:
     int beats() const { return m_beats; }
     int beat_divisions() const { return m_beat_divisions; }
 	int total_divisions() const { return m_beats * m_beat_divisions; }
+	void set_time_signature(int beats, int beat_divisions);
 	int lane_count() const { return m_kit.drums.size(); }
 	int pattern_count() const { return m_patterns.size(); }
 
@@ -108,6 +115,7 @@ public:
 	void redo();
 
 private:
+	void update_events();
 	void update_events(int pattern);
 	DrumKit m_kit;
 	std::vector<DrumPattern> m_patterns;

@@ -16,6 +16,7 @@ DrumGrid::DrumGrid(DrumData& data): m_data(data)
 void DrumGrid::paint(juce::Graphics& g)
 {
     int total_divisions = m_data.total_divisions();
+	int beat_divisions = m_data.beat_divisions();
     // Fill background
     g.setColour({ 128, 128, 128 });
     g.fillRect(0, 0, total_divisions * m_note_width, m_data.lane_count() * m_lane_height);
@@ -28,7 +29,7 @@ void DrumGrid::paint(juce::Graphics& g)
     // Draw grid
     for (int i = 0; i < total_divisions + 1; ++i)
     {
-        if (i % 4 == 0)
+        if (i % beat_divisions == 0)
             g.setColour({ 255, 255, 255 });
         else
             g.setColour({ 0, 0, 0 });
