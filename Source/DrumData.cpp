@@ -145,18 +145,6 @@ void DrumData::clear_hits()
 	update_events(m_current_pattern);
 }
 
-void DrumData::get_events(double start_time, double end_time, int num_samples, juce::MidiBuffer& midiMessages)
-{
-	for (auto& e : m_patterns[m_current_pattern].m_events)
-	{
-		if (e.beat_time >= start_time && e.beat_time < end_time)
-		{
-			double time_fraction = (e.beat_time - start_time) / (end_time - start_time);
-			auto sample_time = static_cast<int>(time_fraction * num_samples);
-			midiMessages.addEvent(juce::MidiMessage::noteOn(1, m_kit.drums[e.lane].note, juce::uint8(e.velocity)), sample_time);
-		}
-	}
-}
 
 std::string DrumData::to_json() const
 {
