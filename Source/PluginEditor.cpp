@@ -106,27 +106,7 @@ DrummerQueenAudioProcessorEditor::DrummerQueenAudioProcessorEditor (DrummerQueen
     addAndMakeVisible(m_time_signature_box);
  
     m_drag_button.setButtonText("Drag");
-	m_drag_button.onStartDrag = [this]
-		{
-            juce::File tempDirectory = juce::File::getSpecialLocation(juce::File::tempDirectory);
-			juce::File tempFile = tempDirectory.getChildFile("pattern.midi");
-			juce::MidiMessageSequence sequence;
-            int tpq = 960;
-			data().get_events(0., data().beats(), data().beats() * tpq, sequence);
-            juce::MidiFile midi_file;
-            midi_file.setTicksPerQuarterNote(tpq);
-            midi_file.addTrack(sequence);
-            auto stream = tempFile.createOutputStream();
-            if (stream)
-            {
-                stream->setPosition(0);
-                stream->truncate();
-                midi_file.writeTo(*stream);
-				stream->flush();
-				stream = nullptr;
-                juce::DragAndDropContainer::performExternalDragDropOfFiles({ tempFile.getFullPathName()}, true);
-            }
-		};
+	m_drag_button.onStartDrag = [this] { drag_midi(); };
     addAndMakeVisible(m_drag_button);
     set_editor_visible(false);
 
@@ -311,4 +291,26 @@ void DrummerQueenAudioProcessorEditor::select_time_signature()
 			return;
 		}
 	}
+}
+
+void DrummerQueenAudioProcessorEditor::drag_midi()
+{
+    juce::File tempDirectory = juce::File::getSpecialLocation(juce::File::tempDirectory);
+    juce::File tempFile = tempDirectory.getChildFile("pattern.midi");
+    juce::MidiMessageSequence sequence;
+    int tpq = 960;
+    data().get_events(0., data().beats(), data().beats() * tpq, sequence);
+    juce::MidiFile midi_file;
+    midi_file.setTicksPerQuarterNote(tpq);
+    midi_file.addTrack(sequence);
+    auto stream = tempFile.createOutputStream();
+    if (stream)
+    {
+        stream->setPosition(0);
+        stream->truncate();
+        midi_file.writeTo(*stream);
+        stream->flush();
+        stream = nullptr;
+        juce::DragAndDropContainer::performExternalDragDropOfFiles({ tempFile.getFullPathName() }, true);
+    }
 }

@@ -66,6 +66,7 @@ public:
 	void set_editor_visible(bool visible);
 
 private:
+    void drag_midi();
     void sliderValueChanged(juce::Slider* slider) override;
     void update_pattern_buttons();
 	DrumData& data() { return audioProcessor.m_data; }
