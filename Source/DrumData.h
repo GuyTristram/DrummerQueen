@@ -89,8 +89,8 @@ public:
     int beat_divisions() const { return m_beat_divisions; }
 	int total_divisions() const { return m_beats * m_beat_divisions; }
 	void set_time_signature(int beats, int beat_divisions);
-	int lane_count() const { return m_kit.drums.size(); }
-	int pattern_count() const { return m_patterns.size(); }
+	int lane_count() const { return (int)m_kit.drums.size(); }
+	int pattern_count() const { return (int)m_patterns.size(); }
 
 	void set_swing(float swing);
 

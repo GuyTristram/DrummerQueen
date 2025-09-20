@@ -4,7 +4,7 @@
 
 namespace
 {
-	std::vector<int> parse_seq(const char*& c) {
+	std::vector<int> parse_seq_impl(const char*& c) {
 		std::vector<int> result;
 		int repeat = 1;
 		while (*c) {
@@ -25,7 +25,7 @@ namespace
 			}
 			else if (*c == '(') {
 				++c;
-				auto nested = parse_seq(c);
+				auto nested = parse_seq_impl(c);
 				for (int i = 0; i < repeat; ++i) {
 					result.insert(result.end(), nested.begin(), nested.end());
 				}
@@ -40,6 +40,10 @@ namespace
 			}
 		}
 		return result;
+	}
+
+	std::vector<int> parse_seq(const char* c) {
+		return parse_seq_impl(c);
 	}
 
 	bool validate(const char* c) {
@@ -59,7 +63,7 @@ namespace
 		return paren_level == 0;
 	}
 
-	double count_seq(const char*& c) {
+	double count_seq_impl(const char*& c) {
 		double result = 0.;
 		int repeat = 1;
 		while (*c) {
@@ -77,7 +81,7 @@ namespace
 			}
 			else if (*c == '(') {
 				++c;
-				auto nested = count_seq(c);
+				auto nested = count_seq_impl(c);
 				result += repeat * nested;
 				repeat = 1;
 			}
@@ -90,6 +94,9 @@ namespace
 			}
 		}
 		return result;
+	}
+	double count_seq(const char* c) {
+		return count_seq_impl(c);
 	}
 }
 
@@ -107,7 +114,7 @@ int DrumData::add_pattern()
 	//m_patterns.emplace_back((int)m_kit.drums.size(), m_beats * m_beat_divisions);
 	m_patterns.emplace_back(m_patterns[m_current_pattern]);
 	m_listener.changed();
-	return m_patterns.size() - 1;
+	return (int)m_patterns.size() - 1;
 }
 
 void DrumData::set_current_pattern(int pattern) 
@@ -146,6 +153,7 @@ void DrumData::set_sequence_str(std::string const& sequence)
 		if (len < 10000)
 		{
 			m_sequence_length = len;
+			c = m_sequence_str.c_str();
 			m_sequence = parse_seq(c);
 		}
 	}

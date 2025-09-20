@@ -22,7 +22,7 @@ void DrumGrid::paint(juce::Graphics& g)
     g.fillRect(0, 0, total_divisions * m_note_width, m_data.lane_count() * m_lane_height);
 
     // Draw time
-    int x_time = m_note_width * m_data.beat_divisions() * m_position;
+    int x_time = int(m_note_width * m_data.beat_divisions() * m_position);
     g.setColour({ 200, 200, 0 });
     g.drawVerticalLine(x_time, 0, m_lane_height * m_data.lane_count());
 
@@ -109,7 +109,7 @@ void VelocityButton::paintButton(juce::Graphics& g, bool shouldDrawButtonAsHighl
 
 	int min_size = max_size / 7;
 
-	int size = m_velocity / 127.0 * (max_size - min_size) + min_size;
+	int size = int(m_velocity / 127.0 * (max_size - min_size) + min_size);
 	int border = (getWidth() - size) / 2;
     //g.fillRoundedRectangle(border, border, getWidth() - border * 2, getHeight() - border * 2, size / 2);
 	g.fillEllipse(border, border, getWidth() - border * 2, getHeight() - border * 2);
@@ -129,8 +129,6 @@ void PatternButton::paintButton(juce::Graphics& g, bool shouldDrawButtonAsHighli
     }
 
     int max_size = std::min(getWidth(), getHeight()) - 8;
-
-    int min_size = max_size / 7;
 
 	char label[2] = { char(m_pattern) + 'A', 0 };
     g.drawText(label, getLocalBounds(), juce::Justification::centred);
