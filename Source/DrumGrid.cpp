@@ -132,6 +132,6 @@ void PatternButton::paintButton(juce::Graphics& g, bool shouldDrawButtonAsHighli
 
     int min_size = max_size / 7;
 
-    std::string str = std::to_string(m_pattern);
-    g.drawText(str.c_str(), getLocalBounds(), juce::Justification::centred);
+	char label[2] = { char(m_pattern) + 'A', 0 };
+    g.drawText(label, getLocalBounds(), juce::Justification::centred);
 }

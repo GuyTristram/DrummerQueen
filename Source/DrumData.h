@@ -79,6 +79,7 @@ public:
 	int get_current_pattern() const { return m_current_pattern; }
 
 	void set_sequence_str(std::string const& sequence);
+	std::string get_sequence_str() const { return m_sequence_str; }
 	void play_sequence(bool ps);
 	bool is_playing_sequence() const { return m_play_sequence; }
 	std::vector<int> const& get_sequence() const { return m_sequence; }
@@ -104,17 +105,23 @@ public:
 	void clear_hits();
 
 	template <typename MB>
-	void get_events(double start_time, double end_time, int num_samples, MB& midiMessages)
+	void get_events(int pattern, double start_time, double end_time, double offset_time, int num_samples, MB& midiMessages)
 	{
-		for (auto& e : m_patterns[m_current_pattern].m_events)
+		for (auto& e : m_patterns[pattern].m_events)
 		{
 			if (e.beat_time >= start_time && e.beat_time < end_time)
 			{
-				double time_fraction = (e.beat_time - start_time) / (end_time - start_time);
+				double time_fraction = (e.beat_time + offset_time - start_time) / (end_time - start_time);
 				auto sample_time = static_cast<int>(time_fraction * num_samples);
 				midiMessages.addEvent(juce::MidiMessage::noteOn(1, m_kit.drums[e.lane].note, juce::uint8(e.velocity)), sample_time);
 			}
 		}
+	}
+
+	template <typename MB>
+	void get_events(double start_time, double end_time, int num_samples, MB& midiMessages)
+	{
+		get_events(m_current_pattern, start_time, end_time, 0.0, num_samples, midiMessages);
 	}
 
 	std::string to_json() const;

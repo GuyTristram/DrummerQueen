@@ -2,6 +2,47 @@
 
 #include "json.hpp"
 
+namespace
+{
+	std::vector<int> parse(const char*& c) {
+		std::vector<int> result;
+		int repeat = 1;
+		while (*c) {
+			if (isdigit(*c)) {
+				repeat = 0;
+				while (*c && isdigit(*c)) {
+					repeat = repeat * 10 + (*c - '0');
+					++c;
+				}
+			}
+			else if (isalpha(*c)) {
+				auto n = tolower(*c) - 'a';
+				for (int i = 0; i < repeat; ++i) {
+					result.push_back(n);
+				}
+				repeat = 1;
+				++c;
+			}
+			else if (*c == '(') {
+				++c;
+				auto nested = parse(c);
+				for (int i = 0; i < repeat; ++i) {
+					result.insert(result.end(), nested.begin(), nested.end());
+				}
+				repeat = 1;
+			}
+			else if (*c == ')') {
+				++c;
+				return result;
+			}
+			else {
+				++c;
+			}
+		}
+		return result;
+	}
+}
+
 void DrumData::add_drum(std::string name, int note)
 {
 	m_kit.drums.emplace_back(name, note);
@@ -31,15 +72,8 @@ void DrumData::set_current_pattern(int pattern)
 void DrumData::set_sequence_str(std::string const& sequence)
 {
 	m_sequence_str = sequence;
-	m_sequence.clear();
-	for (auto c : m_sequence_str)
-	{
-		int v = c - '1';
-		if (v >= 0 && v < m_patterns.size())
-		{
-			m_sequence.push_back(v);
-		}
-	}
+	const char* c = m_sequence_str.c_str();
+	m_sequence = parse(c);
 }
 
 void DrumData::play_sequence(bool ps)
@@ -176,6 +210,7 @@ std::string DrumData::to_json() const
 		}
 		j["patterns"].push_back(p);
 	}
+	j["sequence"] = m_sequence_str;
 	return j.dump(3);
 }
 
@@ -210,6 +245,14 @@ void DrumData::from_json(std::string const& json_string)
 		update_events(pattern_count);
 		++pattern_count;
 	}
+	if (j.find("sequence") != j.end())
+	{
+		set_sequence_str(j["sequence"]);
+	}
+	else
+	{
+		set_sequence_str("");
+	}
 }
 
 void DrumData::update_events(int pattern)
@@ -237,6 +280,9 @@ void DrumData::update_events(int pattern)
 				}
 				e.lane = lane;
 				e.velocity = lanes[lane].velocity[division];
+				m_patterns[pattern].m_events.push_back(e);
+				e.velocity = 0;
+				e.beat_time += .9 / m_beat_divisions;
 				m_patterns[pattern].m_events.push_back(e);
 			}
 		}

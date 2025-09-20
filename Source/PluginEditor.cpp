@@ -43,6 +43,7 @@ DrummerQueenAudioProcessorEditor::DrummerQueenAudioProcessorEditor (DrummerQueen
 	m_add_pattern_button.onClick = [this] {data().set_current_pattern(data().add_pattern()); update_pattern_buttons(); };
     addAndMakeVisible(m_add_pattern_button);
 
+	m_sequence_editor.setText(data().get_sequence_str());
     addAndMakeVisible(m_sequence_editor);
 	m_sequence_editor.onTextChange = [this] {data().set_sequence_str(m_sequence_editor.getText().toStdString()); };
 	addAndMakeVisible(m_play_sequence_button);
@@ -247,7 +248,7 @@ void DrummerQueenAudioProcessorEditor::update_pattern_buttons()
 	int n_patterns = data().pattern_count();
     for (int i = 0; i < n_patterns; ++i)
     {
-        m_pattern_buttons.emplace_back(std::make_unique<PatternButton>(i + 1));
+        m_pattern_buttons.emplace_back(std::make_unique<PatternButton>(i));
         m_pattern_buttons.back()->onClick = [this, i] {data().set_current_pattern(i); m_grid.repaint(); };
 		m_pattern_buttons.back()->setRadioGroupId(2);
 		addAndMakeVisible(m_pattern_buttons.back().get());
@@ -297,12 +298,18 @@ void DrummerQueenAudioProcessorEditor::drag_midi()
 {
     juce::File tempDirectory = juce::File::getSpecialLocation(juce::File::tempDirectory);
     juce::File tempFile = tempDirectory.getChildFile("pattern.midi");
-    juce::MidiMessageSequence sequence;
+    juce::MidiMessageSequence midi_sequence;
+	auto sequence = data().is_playing_sequence() ? data().get_sequence() : std::vector<int>{ data().get_current_pattern() };
     int tpq = 960;
-    data().get_events(0., data().beats(), data().beats() * tpq, sequence);
+	double offset = 0.;
+	for (auto p : sequence)
+	{
+        data().get_events(p, 0., data().beats(), offset, data().beats() * tpq, midi_sequence);
+		offset += data().beats();
+	}
     juce::MidiFile midi_file;
     midi_file.setTicksPerQuarterNote(tpq);
-    midi_file.addTrack(sequence);
+    midi_file.addTrack(midi_sequence);
     auto stream = tempFile.createOutputStream();
     if (stream)
     {
