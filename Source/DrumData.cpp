@@ -4,7 +4,7 @@
 
 namespace
 {
-	std::vector<int> parse(const char*& c) {
+	std::vector<int> parse_seq(const char*& c) {
 		std::vector<int> result;
 		int repeat = 1;
 		while (*c) {
@@ -25,10 +25,60 @@ namespace
 			}
 			else if (*c == '(') {
 				++c;
-				auto nested = parse(c);
+				auto nested = parse_seq(c);
 				for (int i = 0; i < repeat; ++i) {
 					result.insert(result.end(), nested.begin(), nested.end());
 				}
+				repeat = 1;
+			}
+			else if (*c == ')') {
+				++c;
+				return result;
+			}
+			else {
+				++c;
+			}
+		}
+		return result;
+	}
+
+	bool validate(const char* c) {
+		int paren_level = 0;
+		while (*c) {
+			if (*c == '(') {
+				++paren_level;
+			}
+			else if (*c == ')') {
+				--paren_level;
+				if (paren_level < 0) {
+					return false;
+				}
+			}
+			++c;
+		}
+		return paren_level == 0;
+	}
+
+	double count_seq(const char*& c) {
+		double result = 0.;
+		int repeat = 1;
+		while (*c) {
+			if (isdigit(*c)) {
+				repeat = 0;
+				while (*c && isdigit(*c)) {
+					repeat = repeat * 10 + (*c - '0');
+					++c;
+				}
+			}
+			else if (isalpha(*c)) {
+				result += repeat;
+				repeat = 1;
+				++c;
+			}
+			else if (*c == '(') {
+				++c;
+				auto nested = count_seq(c);
+				result += repeat * nested;
 				repeat = 1;
 			}
 			else if (*c == ')') {
@@ -71,9 +121,34 @@ void DrumData::set_current_pattern(int pattern)
 
 void DrumData::set_sequence_str(std::string const& sequence)
 {
-	m_sequence_str = sequence;
+	m_sequence_str.clear();
+	m_sequence_length = 0;
+	m_sequence.clear();
+	for (auto c : sequence)
+	{
+		if (isalpha(c))
+		{
+			c = toupper(c);
+			if (c - 'A' < m_patterns.size())
+			{
+				m_sequence_str.push_back(c);
+			}
+		}
+		else if (isdigit(c) || c == '(' || c == ')')
+		{
+			m_sequence_str.push_back(c);
+		}
+	}
 	const char* c = m_sequence_str.c_str();
-	m_sequence = parse(c);
+	if (validate(c))
+	{
+		auto len = count_seq(c);
+		if (len < 10000)
+		{
+			m_sequence_length = len;
+			m_sequence = parse_seq(c);
+		}
+	}
 }
 
 void DrumData::play_sequence(bool ps)

@@ -85,6 +85,7 @@ private:
     juce::TextButton m_redo_button;
 
     juce::TextEditor m_sequence_editor;
+	juce::Label m_sequence_length_label;
 	juce::ToggleButton m_play_sequence_button;
 
     int m_lane_editting = -1;

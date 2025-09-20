@@ -80,6 +80,7 @@ public:
 
 	void set_sequence_str(std::string const& sequence);
 	std::string get_sequence_str() const { return m_sequence_str; }
+	int sequence_length() const { return m_sequence_length; }
 	void play_sequence(bool ps);
 	bool is_playing_sequence() const { return m_play_sequence; }
 	std::vector<int> const& get_sequence() const { return m_sequence; }
@@ -146,6 +147,7 @@ private:
 	std::string m_sequence_str;
 	std::vector<int> m_sequence;
 	bool m_play_sequence = false;
+	int m_sequence_length;
 
 	DrumDataListener& m_listener;
 

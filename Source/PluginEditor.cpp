@@ -45,9 +45,15 @@ DrummerQueenAudioProcessorEditor::DrummerQueenAudioProcessorEditor (DrummerQueen
 
 	m_sequence_editor.setText(data().get_sequence_str());
     addAndMakeVisible(m_sequence_editor);
-	m_sequence_editor.onTextChange = [this] {data().set_sequence_str(m_sequence_editor.getText().toStdString()); };
+	m_sequence_editor.onTextChange = [this]
+        {
+            data().set_sequence_str(m_sequence_editor.getText().toStdString());
+			m_sequence_editor.setText(data().get_sequence_str(), juce::dontSendNotification);
+			m_sequence_length_label.setText(std::format("Len: {}", data().sequence_length()), juce::dontSendNotification);
+        };
 	addAndMakeVisible(m_play_sequence_button);
 	m_play_sequence_button.onClick = [this] {data().play_sequence(m_play_sequence_button.getToggleState()); };
+    addAndMakeVisible(m_sequence_length_label);
 
 	m_undo_button.setButtonText("Undo");
 	addAndMakeVisible(m_undo_button);
@@ -192,7 +198,8 @@ void DrummerQueenAudioProcessorEditor::resized()
 	m_add_pattern_button.setBounds(x, y, 24, 24);
 
 	m_play_sequence_button.setBounds(8, grid_bottom + 36, 24, 24);
-	m_sequence_editor.setBounds(m_grid_left, grid_bottom + 36, width, 24);
+    m_sequence_editor.setBounds(m_grid_left, grid_bottom + 36, width-80, 24);
+    m_sequence_length_label.setBounds(m_grid_left + width - 80, grid_bottom + 36, 80, 24);
 
     m_drag_button.setBounds(8, grid_bottom + 64, 64, 24);
 }
