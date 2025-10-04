@@ -25,6 +25,11 @@ protected:
     void mouseDown(const juce::MouseEvent& event) override { TextButton::mouseDown(event);  onStartDrag(); }
 };
 
+class DrumNoteComboBox : public juce::ComboBox
+{
+    void paint(juce::Graphics&) override;
+};
+
 //==============================================================================
 /**
 */

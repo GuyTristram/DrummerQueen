@@ -248,7 +248,7 @@ void DrummerQueenAudioProcessorEditor::set_pattern(int i)
 	m_lane_name_buttons.clear();
     int y = 64;
     for (int i = 0; i < data().lane_count(); ++i) {
-        m_lane_combo_boxes.push_back(std::make_unique<juce::ComboBox>());
+        m_lane_combo_boxes.push_back(std::make_unique<DrumNoteComboBox>());
         for (auto const& drum : general_midi) {
             m_lane_combo_boxes.back()->addItem(drum.name, drum.note);
         }
@@ -258,11 +258,10 @@ void DrummerQueenAudioProcessorEditor::set_pattern(int i)
             m_lane_name_buttons[i]->setButtonText(m_lane_combo_boxes[i]->getText());
         };
         m_lane_combo_boxes.back()->setSelectedId(pattern.lanes[i].note, juce::dontSendNotification);
-        m_lane_combo_boxes.back()->setBounds(8 + 112, y, 24, 24);
+        m_lane_combo_boxes.back()->setBounds(8 + 109, y, 24, 25);
         addAndMakeVisible(*m_lane_combo_boxes.back());
         
-        m_lane_name_buttons.push_back(std::make_unique<juce::TextButton>());
-        m_lane_name_buttons.back()->setButtonText(m_lane_combo_boxes.back()->getText());
+        m_lane_name_buttons.push_back(std::make_unique<juce::TextButton>(m_lane_combo_boxes.back()->getText()));
         m_lane_name_buttons.back()->setBounds(8, y, 108, 24);
 		addAndMakeVisible(*m_lane_name_buttons.back());
         y += 24;
@@ -340,4 +339,13 @@ void DrummerQueenAudioProcessorEditor::drag_midi()
         stream = nullptr;
         juce::DragAndDropContainer::performExternalDragDropOfFiles({ tempFile.getFullPathName() }, true);
     }
+}
+
+void DrumNoteComboBox::paint(juce::Graphics& g)
+{
+    //g.fillAll(juce::Colours::black);
+    g.setColour(juce::Colours::white);
+    g.drawRect(getLocalBounds());
+    char label[2] = { 'v', 0 };
+    g.drawText(label, getLocalBounds(), juce::Justification::centred);
 }
