@@ -9,8 +9,8 @@
 
 struct DrumInfo
 {
-	std::string name;
 	int note;
+	std::string name;
 };
 
 struct DrumKit
@@ -22,13 +22,14 @@ struct DrumKit
 struct DrumLane
 {
 	DrumLane(int divisions) : velocity(divisions) {}
+	int note = 0;
     std::vector<int> velocity;
 };
 
 struct DrumEvent
 {
 	double beat_time;
-	int lane;
+	int note;
 	int velocity;
 };
 
@@ -40,14 +41,6 @@ struct TimeSignature
 
 struct DrumPattern
 {
-	DrumPattern() = default;
-	DrumPattern(int drum_count, int divisions)
-	{
-		for (int i = 0; i < drum_count; ++i)
-		{
-			lanes.emplace_back(divisions);
-		}
-	}
 	std::vector<DrumLane> lanes;
 	std::vector<DrumEvent> m_events;
 };
@@ -76,7 +69,8 @@ public:
 
 	int add_pattern();
 	void set_current_pattern(int pattern);
-	int get_current_pattern() const { return m_current_pattern; }
+	int get_current_pattern_id() const { return m_current_pattern; }
+	DrumPattern & get_current_pattern() { return m_patterns[m_current_pattern]; }
 
 	void set_sequence_str(std::string const& sequence);
 	std::string get_sequence_str() const { return m_sequence_str; }
@@ -89,19 +83,14 @@ public:
     int beat_divisions() const { return m_beat_divisions; }
 	int total_divisions() const { return m_beats * m_beat_divisions; }
 	void set_time_signature(int beats, int beat_divisions);
-	int lane_count() const { return (int)m_kit.drums.size(); }
 	int pattern_count() const { return (int)m_patterns.size(); }
 
 	void set_swing(float swing);
 
+	int lane_count() const;
+
 	void set_hit(int lane, int division, int velocity);
 	int get_hit(int lane, int division) const;
-
-    std::string get_lane_name(int lane) const;
-    void set_lane_name(int lane, std::string const& name);
-
-    int get_lane_note(int lane) const;
-    void set_lane_note(int lane, int note);
 
 	void clear_hits();
 
@@ -114,7 +103,7 @@ public:
 			{
 				double time_fraction = (e.beat_time + offset_time - start_time) / (end_time - start_time);
 				auto sample_time = static_cast<int>(time_fraction * num_samples);
-				midiMessages.addEvent(juce::MidiMessage::noteOn(1, m_kit.drums[e.lane].note, juce::uint8(e.velocity)), sample_time);
+				midiMessages.addEvent(juce::MidiMessage::noteOn(1, e.note, juce::uint8(e.velocity)), sample_time);
 			}
 		}
 	}
@@ -137,7 +126,6 @@ public:
 private:
 	void update_events();
 	void update_events(int pattern);
-	DrumKit m_kit;
 	std::vector<DrumPattern> m_patterns;
 	int m_current_pattern = 0;
     int m_beats = 4;
@@ -147,7 +135,7 @@ private:
 	std::string m_sequence_str;
 	std::vector<int> m_sequence;
 	bool m_play_sequence = false;
-	int m_sequence_length;
+	int m_sequence_length = 0;
 
 	DrumDataListener& m_listener;
 

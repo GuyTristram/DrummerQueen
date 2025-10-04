@@ -102,11 +102,8 @@ namespace
 
 void DrumData::add_drum(std::string name, int note)
 {
-	m_kit.drums.emplace_back(name, note);
-	for (auto& pattern : m_patterns)
-	{
-		pattern.lanes.emplace_back(m_beats * m_beat_divisions);
-	}
+	m_patterns[m_current_pattern].lanes.emplace_back(m_beats * m_beat_divisions);
+	m_patterns[m_current_pattern].lanes.back().note = note;
 }
 
 int DrumData::add_pattern()
@@ -135,7 +132,7 @@ void DrumData::set_sequence_str(std::string const& sequence)
 	{
 		if (isalpha(c))
 		{
-			c = toupper(c);
+			c = char(toupper(c));
 			if (c - 'A' < m_patterns.size())
 			{
 				m_sequence_str.push_back(c);
@@ -201,6 +198,11 @@ void DrumData::set_swing(float swing)
 	update_events();
 }
 
+int DrumData::lane_count() const
+{
+	return (int)m_patterns[m_current_pattern].lanes.size();
+}
+
 void DrumData::update_events()
 {
 	for (int i = 0; i < m_patterns.size(); ++i)
@@ -230,26 +232,6 @@ int DrumData::get_hit(int lane, int division) const
 	return m_patterns[m_current_pattern].lanes[lane].velocity[division];
 }
 
-std::string DrumData::get_lane_name(int lane) const
-{
-	return m_kit.drums[lane].name;
-}
-
-void DrumData::set_lane_name(int lane, std::string const &name)
-{
-	m_kit.drums[lane].name = name;
-}
-
-int DrumData::get_lane_note(int lane) const
-{
-	return m_kit.drums[lane].note;
-}
-
-void DrumData::set_lane_note(int lane, int note)
-{
-	m_kit.drums[lane].note = note;
-}
-
 void DrumData::clear_hits()
 {
 	for (auto& lane : m_patterns[m_current_pattern].lanes)
@@ -267,19 +249,10 @@ std::string DrumData::to_json() const
 {
 	using json = nlohmann::json;
 	json j;
+	j["version"] = 1;
 	j["beats"] = m_beats;
 	j["beat_divisions"] = m_beat_divisions;
 	j["swing"] = m_swing;
-	j["kit"] = json::object();
-	j["kit"]["name"] = m_kit.name;
-	j["kit"]["drums"] = json::array();
-	for (auto& drum : m_kit.drums)
-	{
-		json d;
-		d["name"] = drum.name;
-		d["note"] = drum.note;
-		j["kit"]["drums"].push_back(d);
-	}
 	j["patterns"] = json::array();
 	for (auto& pattern : m_patterns)
 	{
@@ -288,6 +261,7 @@ std::string DrumData::to_json() const
 		for (auto& lane : pattern.lanes)
 		{
 			json l;
+			l["note"] = lane.note;
 			l["velocity"] = lane.velocity;
 			p["lanes"].push_back(l);
 		}
@@ -301,14 +275,19 @@ void DrumData::from_json(std::string const& json_string)
 {
 	using json = nlohmann::json;
 	auto j = json::parse(json_string);
+	int version = j.value("version", 0);
 	m_beats = j["beats"];
 	m_beat_divisions = j["beat_divisions"];
 	m_swing = j["swing"];
-	m_kit.name = j["kit"]["name"];
-	m_kit.drums.clear();
-	for (auto& d : j["kit"]["drums"])
+	DrumKit kit;
+	if (version == 0)
 	{
-		m_kit.drums.emplace_back(d["name"], d["note"]);
+		kit.name = j["kit"]["name"];
+		kit.drums.clear();
+		for (auto& d : j["kit"]["drums"])
+		{
+			kit.drums.emplace_back(d["note"], d["name"]);
+		}
 	}
 	m_patterns.clear();
 	int pattern_count = 0;
@@ -318,6 +297,15 @@ void DrumData::from_json(std::string const& json_string)
 		for (auto& l : p["lanes"])
 		{
 			DrumLane lane(0);
+			if (version == 0)
+			{
+				lane.note = kit.drums[pattern.lanes.size()].note;
+			}
+			else
+			{
+				lane.note = l["note"];
+			}
+
 			for (auto v : l["velocity"])
 			{
 				lane.velocity.push_back(v);
@@ -361,7 +349,7 @@ void DrumData::update_events(int pattern)
 				{
 					e.beat_time += swing_adjust1;
 				}
-				e.lane = lane;
+				e.note = lanes[lane].note;
 				e.velocity = lanes[lane].velocity[division];
 				m_patterns[pattern].m_events.push_back(e);
 				e.velocity = 0;
@@ -411,8 +399,6 @@ std::ostream& operator<<(std::ostream& out, const DrumData& data)
 	out << lanes.size() << "\n";
 	for (int i = 0; i < lanes.size(); ++i)
 	{
-		out << data.m_kit.drums[i].name << "\n";
-		out << data.m_kit.drums[i].note << "\n";
 		for (auto v : lanes[i].velocity)
 		{
 			out << v << " ";
@@ -430,7 +416,6 @@ std::istream& operator>>(std::istream& in, DrumData& data)
 	in >> lane_count;
 	auto& lanes = data.m_patterns[0].lanes;
 	lanes.clear();
-	data.m_kit.drums.clear();
 	for (int i = 0; i < lane_count; ++i)
 	{
 		std::string name;

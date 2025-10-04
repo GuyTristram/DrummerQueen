@@ -10,11 +10,61 @@
 #include "PluginEditor.h"
 #include <format>
 
-
+namespace
+{
+std::vector<DrumInfo> general_midi = {
+    {35,        "Acoustic Bass Drum"},
+    {36,		"Bass Drum"},
+    {37,		"Side Stick"},
+    {38,		"Acoustic Snare"},
+    {39,		"Hand Clap"},
+    {40,		"Electric Snare"},
+    {41,		"Low Floor Tom"},
+    {42,		"Closed Hi Hat"},
+    {43,		"High Floor Tom"},
+    {44,		"Pedal Hi - Hat"},
+    {45,		"Low Tom"},
+    {46,		"Open Hi - Hat"},
+    {47,		"Low - Mid Tom"},
+    {48,		"Hi - Mid Tom"},
+    {49,		"Crash Cymbal 1"},
+    {50,		"High Tom"},
+    {51,		"Ride Cymbal 1"},
+    {52,		"Chinese Cymbal"},
+    {53,		"Ride Bell"},
+    {54,		"Tambourine"},
+    {55,		"Splash Cymbal"},
+    {56,		"Cowbell"},
+    {57,		"Crash Cymbal 2"},
+    {58,		"Vibraslap"},
+    {59,		"Ride Cymbal 2"},
+    {60,		"Hi Bongo"},
+    {61,		"Low Bongo"},
+    {62,		"Mute Hi Conga"},
+    {63,		"Open Hi Conga"},
+    {64,        "Low Conga"},
+    {65,		"Hi Timbale"},
+    {66,		"Low Timbale"},
+    {67,		"Hi Agogo"},
+    {68,		"Low Agogo"},
+    {69,		"Cabasa"},
+    {70,		"Maracas"},
+    {71,		"Short Whistle"},
+    {72,		"Long Whistle"},
+    {73,		"Short Guiro"},
+    {74,		"Long Guiro"},
+    {75,		"Claves"},
+    {76,		"Hi Wood Block"},
+    {77,		"Low Wood Block"},
+    {78,		"Mute Cuica"},
+    {79,		"Open Cuica"},
+    {80,		"Mute Triangle"},
+    {81,		"Open Triangle"}
+};
+}
 //==============================================================================
 DrummerQueenAudioProcessorEditor::DrummerQueenAudioProcessorEditor (DrummerQueenAudioProcessor& p)
-	: AudioProcessorEditor(&p), audioProcessor(p), m_grid(p.m_data),
-    m_keyboard(m_keyboard_state, juce::MidiKeyboardComponent::horizontalKeyboard)
+	: AudioProcessorEditor(&p), audioProcessor(p), m_grid(p.m_data)
 {
 
 
@@ -73,31 +123,6 @@ DrummerQueenAudioProcessorEditor::DrummerQueenAudioProcessorEditor (DrummerQueen
 	addAndMakeVisible(m_swing_slider);
 
     //g.drawFittedText(std::format("Beat {}", audioProcessor.barPos()), getLocalBounds(), juce::Justification::topLeft, 1);
-    for (int i = 0; i < data().lane_count(); ++i)
-    {
-		m_lane_name_buttons.push_back(std::make_unique<juce::TextButton>(data().get_lane_name(i)));
-		m_lane_name_buttons.back()->onClick = [this, i] {edit_lane(i); };
-        addAndMakeVisible(*m_lane_name_buttons.back());
-    }
-
-    addAndMakeVisible(m_note_editor);
-    addAndMakeVisible(m_name_editor);
-
-    m_set_button.setButtonText("Set");
-	m_set_button.onClick = [this] {set_lane_data(); };
-    addAndMakeVisible(m_set_button);
-
-    m_delete_button.setButtonText("Delete");
-    m_delete_button.onClick = [this] {delete_lane(); };
-    addAndMakeVisible(m_delete_button);
-
-    m_cancel_button.setButtonText("Cancel");
-    m_cancel_button.onClick = [this] {set_editor_visible(false); };
-    addAndMakeVisible(m_cancel_button);
-
-    m_keyboard.setLowestVisibleKey(35);
-	m_keyboard_state.addListener(this);
-	addAndMakeVisible(m_keyboard);
 
     add_time_signature("4/4", 4, 4);
     add_time_signature("3/4", 3, 4);
@@ -115,10 +140,11 @@ DrummerQueenAudioProcessorEditor::DrummerQueenAudioProcessorEditor (DrummerQueen
     m_drag_button.setButtonText("Drag");
 	m_drag_button.onStartDrag = [this] { drag_midi(); };
     addAndMakeVisible(m_drag_button);
-    set_editor_visible(false);
+
+	set_pattern(0);
 
 
-    setSize(500, 424);
+    setSize(540, 424);
     audioProcessor.addChangeListener(this);
 
 }
@@ -175,18 +201,10 @@ void DrummerQueenAudioProcessorEditor::resized()
     int y = 64;
     for (auto& name : m_lane_name_buttons)
     {
-		name->setBounds(8, y, 72, 24);
+		name->setBounds(8, y, 132, 24);
         y += 24;
     }
     m_swing_slider.setBounds(m_grid_left, 8, 200, 24);
-
-	int editor_left = m_grid_left + 6;
-    m_name_editor.setBounds(editor_left, m_grid_top + 8, 72, 24);
-    m_note_editor.setBounds(editor_left + 80, m_grid_top + 8, 40, 24);
-	m_set_button.setBounds(editor_left + 128, m_grid_top + 8, 40, 24);
-    m_delete_button.setBounds(editor_left + 176, m_grid_top + 8, 72, 24);
-    m_cancel_button.setBounds(editor_left + 254, m_grid_top + 8, 72, 24);
-    m_keyboard.setBounds(editor_left, m_grid_top + 40, width, 52);
 
     x = m_grid_left;
 	y = grid_bottom + 8;
@@ -208,36 +226,11 @@ void DrummerQueenAudioProcessorEditor::handleNoteOn(juce::MidiKeyboardState* sou
 {
     //auto note_name = juce::MidiMessage::getMidiNoteName(midiNoteNumber, true, true, 3);
     auto note_name = std::format("{}", midiNoteNumber);
-    m_note_editor.setText(note_name, juce::dontSendNotification);
 	audioProcessor.play_note(midiNoteNumber);
-}
-
-void DrummerQueenAudioProcessorEditor::set_lane_data()
-{
-	if (m_lane_editting != -1)
-	{
-		data().set_lane_name(m_lane_editting, m_name_editor.getText().toStdString());
-		auto note = m_note_editor.getText().getIntValue();
-		data().set_lane_note(m_lane_editting, note);
-		m_lane_name_buttons[m_lane_editting]->setButtonText(m_name_editor.getText());
-	}
-	set_editor_visible(false);
-	m_lane_editting = -1;
 }
 
 void DrummerQueenAudioProcessorEditor::delete_lane()
 {
-}
-
-void DrummerQueenAudioProcessorEditor::set_editor_visible(bool visible)
-{
-    m_name_editor.setVisible(visible);
-    m_note_editor.setVisible(visible);
-    m_set_button.setVisible(visible);
-    m_delete_button.setVisible(visible);
-    m_cancel_button.setVisible(visible);
-    m_keyboard.setVisible(visible);
-    m_grid.setVisible(!visible);
 }
 
 void DrummerQueenAudioProcessorEditor::sliderValueChanged(juce::Slider* slider)
@@ -248,6 +241,31 @@ void DrummerQueenAudioProcessorEditor::sliderValueChanged(juce::Slider* slider)
 	}
 }
 
+void DrummerQueenAudioProcessorEditor::set_pattern(int i)
+{
+    data().set_current_pattern(i);
+	auto const &pattern = data().get_current_pattern();
+    m_lane_name_buttons.clear();
+    int y = 64;
+    for (int i = 0; i < data().lane_count(); ++i)
+    {
+        m_lane_name_buttons.push_back(std::make_unique<juce::ComboBox>());
+        for (auto const& drum : general_midi)
+        {
+            m_lane_name_buttons.back()->addItem(drum.name, drum.note);
+        }
+        m_lane_name_buttons.back()->onChange = [this, i]
+            {
+                data().get_current_pattern().lanes[i].note = m_lane_name_buttons[i]->getSelectedId();
+            };
+        m_lane_name_buttons.back()->setSelectedId(pattern.lanes[i].note, juce::dontSendNotification);
+        addAndMakeVisible(*m_lane_name_buttons.back());
+        m_lane_name_buttons.back()->setBounds(8, y, 132, 24);
+        y += 24;
+    }
+    m_grid.repaint();
+}
+
 void DrummerQueenAudioProcessorEditor::update_pattern_buttons()
 {
 	m_pattern_buttons.clear();
@@ -256,11 +274,11 @@ void DrummerQueenAudioProcessorEditor::update_pattern_buttons()
     for (int i = 0; i < n_patterns; ++i)
     {
         m_pattern_buttons.emplace_back(std::make_unique<PatternButton>(i));
-        m_pattern_buttons.back()->onClick = [this, i] {data().set_current_pattern(i); m_grid.repaint(); };
+        m_pattern_buttons.back()->onClick = [this, i] {set_pattern(i); };
 		m_pattern_buttons.back()->setRadioGroupId(2);
 		addAndMakeVisible(m_pattern_buttons.back().get());
     }
-	m_pattern_buttons[data().get_current_pattern()]->setToggleState(true, juce::dontSendNotification);
+	m_pattern_buttons[data().get_current_pattern_id()]->setToggleState(true, juce::dontSendNotification);
     int height = data().lane_count() * m_note_height;
     int grid_bottom = m_grid_top + height;
     int x = m_grid_left;
@@ -272,15 +290,6 @@ void DrummerQueenAudioProcessorEditor::update_pattern_buttons()
     }
     m_add_pattern_button.setBounds(x, y, 24, 24);
 
-}
-
-void DrummerQueenAudioProcessorEditor::edit_lane(int lane)
-{
-	m_lane_editting = lane;
-	m_name_editor.setText(data().get_lane_name(lane), juce::dontSendNotification);
-	auto note_name = std::format("{}", data().get_lane_note(lane));
-	m_note_editor.setText(note_name, juce::dontSendNotification);
-    set_editor_visible(true);
 }
 
 void DrummerQueenAudioProcessorEditor::add_time_signature(char const* name, int beats, int beat_divisions)
@@ -306,7 +315,7 @@ void DrummerQueenAudioProcessorEditor::drag_midi()
     juce::File tempDirectory = juce::File::getSpecialLocation(juce::File::tempDirectory);
     juce::File tempFile = tempDirectory.getChildFile("pattern.midi");
     juce::MidiMessageSequence midi_sequence;
-	auto sequence = data().is_playing_sequence() ? data().get_sequence() : std::vector<int>{ data().get_current_pattern() };
+	auto sequence = data().is_playing_sequence() ? data().get_sequence() : std::vector<int>{ data().get_current_pattern_id() };
     int tpq = 960;
 	double offset = 0.;
 	for (auto p : sequence)
