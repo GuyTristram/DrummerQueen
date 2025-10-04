@@ -77,7 +77,8 @@ private:
     std::vector<std::unique_ptr<juce::ToggleButton>> m_velocity_buttons;
     std::vector<std::unique_ptr<juce::ToggleButton>> m_pattern_buttons;
     juce::TextButton m_add_pattern_button;
-    std::vector<std::unique_ptr<juce::ComboBox>> m_lane_name_buttons;
+    std::vector<std::unique_ptr<juce::TextButton>> m_lane_name_buttons;
+    std::vector<std::unique_ptr<juce::ComboBox>> m_lane_combo_boxes;
     juce::Slider m_swing_slider;
 
     juce::TextButton m_undo_button;

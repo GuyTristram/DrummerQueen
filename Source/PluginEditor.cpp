@@ -199,11 +199,11 @@ void DrummerQueenAudioProcessorEditor::resized()
     x += 80;
     m_time_signature_box.setBounds(x, 32, 64, 24);
     int y = 64;
-    for (auto& name : m_lane_name_buttons)
-    {
-		name->setBounds(8, y, 132, 24);
-        y += 24;
-    }
+    //for (auto& name : m_lane_combo_boxes)
+    //{
+	//	name->setBounds(8, y, 132, 24);
+     //   y += 24;
+    //}
     m_swing_slider.setBounds(m_grid_left, 8, 200, 24);
 
     x = m_grid_left;
@@ -235,8 +235,7 @@ void DrummerQueenAudioProcessorEditor::delete_lane()
 
 void DrummerQueenAudioProcessorEditor::sliderValueChanged(juce::Slider* slider)
 {
-	if (slider == &m_swing_slider)
-	{
+	if (slider == &m_swing_slider) {
 		data().set_swing(m_swing_slider.getValue());
 	}
 }
@@ -245,22 +244,27 @@ void DrummerQueenAudioProcessorEditor::set_pattern(int i)
 {
     data().set_current_pattern(i);
 	auto const &pattern = data().get_current_pattern();
-    m_lane_name_buttons.clear();
+    m_lane_combo_boxes.clear();
+	m_lane_name_buttons.clear();
     int y = 64;
-    for (int i = 0; i < data().lane_count(); ++i)
-    {
-        m_lane_name_buttons.push_back(std::make_unique<juce::ComboBox>());
-        for (auto const& drum : general_midi)
-        {
-            m_lane_name_buttons.back()->addItem(drum.name, drum.note);
+    for (int i = 0; i < data().lane_count(); ++i) {
+        m_lane_combo_boxes.push_back(std::make_unique<juce::ComboBox>());
+        for (auto const& drum : general_midi) {
+            m_lane_combo_boxes.back()->addItem(drum.name, drum.note);
         }
-        m_lane_name_buttons.back()->onChange = [this, i]
-            {
-                data().get_current_pattern().lanes[i].note = m_lane_name_buttons[i]->getSelectedId();
-            };
-        m_lane_name_buttons.back()->setSelectedId(pattern.lanes[i].note, juce::dontSendNotification);
-        addAndMakeVisible(*m_lane_name_buttons.back());
-        m_lane_name_buttons.back()->setBounds(8, y, 132, 24);
+        m_lane_combo_boxes.back()->onChange = [this, i]
+        {
+            data().get_current_pattern().lanes[i].note = m_lane_combo_boxes[i]->getSelectedId();
+            m_lane_name_buttons[i]->setButtonText(m_lane_combo_boxes[i]->getText());
+        };
+        m_lane_combo_boxes.back()->setSelectedId(pattern.lanes[i].note, juce::dontSendNotification);
+        m_lane_combo_boxes.back()->setBounds(8 + 112, y, 24, 24);
+        addAndMakeVisible(*m_lane_combo_boxes.back());
+        
+        m_lane_name_buttons.push_back(std::make_unique<juce::TextButton>());
+        m_lane_name_buttons.back()->setButtonText(m_lane_combo_boxes.back()->getText());
+        m_lane_name_buttons.back()->setBounds(8, y, 108, 24);
+		addAndMakeVisible(*m_lane_name_buttons.back());
         y += 24;
     }
     m_grid.repaint();
