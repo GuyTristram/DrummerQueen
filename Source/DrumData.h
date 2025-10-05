@@ -70,8 +70,9 @@ public:
 	int add_pattern();
 	void set_current_pattern(int pattern);
 	int get_current_pattern_id() const { return m_current_pattern; }
-	DrumPattern & get_current_pattern() { return m_patterns[m_current_pattern]; }
+	const DrumPattern & get_current_pattern() { return m_patterns[m_current_pattern]; }
 	void set_pattern(int pattern_index, DrumPattern const &pattern);
+	void set_lane_note(int lane, int note);
 
 	void set_sequence_str(std::string const& sequence);
 	std::string get_sequence_str() const { return m_sequence_str; }

@@ -109,10 +109,10 @@ DrummerQueenAudioProcessorEditor::DrummerQueenAudioProcessorEditor (DrummerQueen
 
 	m_undo_button.setButtonText("Undo");
 	addAndMakeVisible(m_undo_button);
-    m_undo_button.onClick = [this] {data().undo(); m_grid.repaint(); resize_grid(); };
+    m_undo_button.onClick = [this] {data().undo(); set_pattern(data().get_current_pattern_id()); m_grid.repaint(); resize_grid(); };
 	m_redo_button.setButtonText("Redo");
 	addAndMakeVisible(m_redo_button);
-    m_redo_button.onClick = [this] {data().redo(); m_grid.repaint(); resize_grid(); };
+    m_redo_button.onClick = [this] {data().redo(); set_pattern(data().get_current_pattern_id());  m_grid.repaint(); resize_grid(); };
 
     m_swing_slider.setSliderStyle(juce::Slider::LinearHorizontal);
     m_swing_slider.setRange(0.0, 1.0, 0.05);
@@ -326,7 +326,7 @@ void DrummerQueenAudioProcessorEditor::set_pattern(int i)
         }
         m_lane_combo_boxes.back()->onChange = [this, i]
         {
-            data().get_current_pattern().lanes[i].note = m_lane_combo_boxes[i]->getSelectedId();
+            data().set_lane_note(i, m_lane_combo_boxes[i]->getSelectedId());
             m_lane_name_buttons[i]->setButtonText(m_lane_combo_boxes[i]->getText());
         };
         m_lane_combo_boxes.back()->setSelectedId(pattern.lanes[i].note, juce::dontSendNotification);

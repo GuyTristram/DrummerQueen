@@ -125,12 +125,43 @@ void DrumData::set_current_pattern(int pattern)
 
 void DrumData::set_pattern(int pattern_index, DrumPattern const& pattern)
 {
-	if (pattern_index < 0 || pattern_index >= m_patterns.size())
+	if (pattern_index < 0 || pattern_index >= m_patterns.size()) {
+		return;
+	}
+
+	do_action(
+		[this, pattern_index, pattern]
+		{
+			m_patterns[pattern_index] = pattern;
+			update_events();
+		},
+		[this, pattern_index, old_pattern = m_patterns[pattern_index]]
+		{
+			m_patterns[pattern_index] = old_pattern;
+			update_events();
+		});
+}
+
+void DrumData::set_lane_note(int lane, int note)
+{
+	if (lane < 0 || lane >= lane_count())
 	{
 		return;
 	}
-	m_patterns[pattern_index] = pattern;
-	update_events(pattern_index);
+
+	int pattern = m_current_pattern;
+	int old_note = m_patterns[pattern].lanes[lane].note;
+	do_action(
+		[this, pattern, lane, note]
+		{
+			m_patterns[pattern].lanes[lane].note = note;
+			update_events();
+		},
+		[this, pattern, lane, old_note]
+		{
+			m_patterns[pattern].lanes[lane].note = old_note;
+			update_events();
+		});
 }
 
 void DrumData::set_sequence_str(std::string const& sequence)
