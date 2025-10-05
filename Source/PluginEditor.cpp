@@ -12,6 +12,7 @@
 
 namespace
 {
+    const int MAX_LANES = 12;
 std::vector<DrumInfo> general_midi = {
     {35,        "Acoustic Bass Drum"},
     {36,		"Bass Drum"},
@@ -145,7 +146,7 @@ DrummerQueenAudioProcessorEditor::DrummerQueenAudioProcessorEditor (DrummerQueen
 	set_pattern(0);
 
 
-    setSize(540, 424);
+    setSize(540, 448);
     audioProcessor.addChangeListener(this);
 
 }
@@ -184,7 +185,7 @@ void DrummerQueenAudioProcessorEditor::resized()
     // This is generally where you'll want to lay out the positions of any
     // subcomponents in your editor..
 	int width = data().total_divisions() * m_note_width;
-	int height = data().lane_count() * m_note_height;
+	int height = MAX_LANES * m_note_height;
     resize_grid();
 	int grid_bottom = m_grid_top + height;
 
@@ -207,13 +208,6 @@ void DrummerQueenAudioProcessorEditor::resized()
     m_sequence_length_label.setBounds(m_grid_left + width - 80, grid_bottom + 36, 80, 24);
 
     m_drag_button.setBounds(8, grid_bottom + 64, 64, 24);
-}
-
-void DrummerQueenAudioProcessorEditor::handleNoteOn(juce::MidiKeyboardState* source, int midiChannel, int midiNoteNumber, float velocity)
-{
-    //auto note_name = juce::MidiMessage::getMidiNoteName(midiNoteNumber, true, true, 3);
-    auto note_name = std::format("{}", midiNoteNumber);
-	audioProcessor.play_note(midiNoteNumber);
 }
 
 void DrummerQueenAudioProcessorEditor::delete_lane()
@@ -296,6 +290,8 @@ void DrummerQueenAudioProcessorEditor::drag_onto_pattern(int pattern_index, cons
 
 	data().set_pattern(pattern_index, pattern);
 	set_pattern(pattern_index);
+    m_pattern_buttons[pattern_index]->setToggleState(true, juce::dontSendNotification);
+
 
 	m_grid.repaint();
 }
@@ -338,10 +334,16 @@ void DrummerQueenAudioProcessorEditor::set_pattern(int i)
         addAndMakeVisible(*m_lane_combo_boxes.back());
         
         m_lane_name_buttons.push_back(std::make_unique<juce::TextButton>(m_lane_combo_boxes.back()->getText()));
-        m_lane_name_buttons.back()->setBounds(8, y, 108, 24);
+        m_lane_name_buttons.back()->setBounds(8, y, 108, 25);
+		m_lane_name_buttons.back()->setConnectedEdges(juce::Button::ConnectedOnLeft | juce::Button::ConnectedOnRight);
+		m_lane_name_buttons.back()->onClick = [this, i]
+			{
+                audioProcessor.play_note(data().get_current_pattern().lanes[i].note);;
+			};
 		addAndMakeVisible(*m_lane_name_buttons.back());
         y += 24;
     }
+    resize_grid();
     m_grid.repaint();
 }
 
@@ -362,7 +364,7 @@ void DrummerQueenAudioProcessorEditor::update_pattern_buttons()
         m_pattern_button_parent.addAndMakeVisible(m_pattern_buttons.back().get());
     }
 	m_pattern_buttons[data().get_current_pattern_id()]->setToggleState(true, juce::dontSendNotification);
-    int height = data().lane_count() * m_note_height;
+    int height = MAX_LANES * m_note_height;
     int grid_bottom = m_grid_top + height;
     m_pattern_button_parent.setBounds(m_grid_left, grid_bottom + 8, 24 * 16, 24);
     int x = 0;
@@ -424,23 +426,12 @@ void DrummerQueenAudioProcessorEditor::drag_midi()
 
 void DrumNoteComboBox::paint(juce::Graphics& g)
 {
-    //g.fillAll(juce::Colours::black);
     g.setColour(juce::Colours::white);
     g.drawRect(getLocalBounds());
     char label[2] = { 'v', 0 };
     g.drawText(label, getLocalBounds(), juce::Justification::centred);
 }
 
-/*
-void PatternButton::paint(juce::Graphics& g)
-{
-    g.fillAll(juce::Colours::black);
-    g.setColour(juce::Colours::white);
-
-    char label[2] = { char(m_pattern) + 'A', 0 };
-    g.drawText(label, getLocalBounds(), juce::Justification::centred);
-}
-*/
 void PatternButton::paintButton(juce::Graphics& g, bool shouldDrawButtonAsHighlighted, bool shouldDrawButtonAsDown)
 {
     g.fillAll(juce::Colours::black);

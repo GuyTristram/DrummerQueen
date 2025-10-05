@@ -22,9 +22,6 @@ class PatternButton : public juce::ToggleButton, public juce::FileDragAndDropTar
 public:
     PatternButton(DrummerQueenAudioProcessorEditor *editor, int pattern) : m_editor(editor), m_pattern(pattern) {}
 
-    //void paint(juce::Graphics& g) override;
-
-
     void paintButton(juce::Graphics& g,
         bool	shouldDrawButtonAsHighlighted,
         bool	shouldDrawButtonAsDown) override;
@@ -32,9 +29,9 @@ public:
 	bool isInterestedInFileDrag(const juce::StringArray& files) override;
 	void filesDropped(const juce::StringArray& files, int x, int y) override;
 
+private:
 	DrummerQueenAudioProcessorEditor* m_editor = nullptr;
     int m_pattern;
-
 };
 
 
@@ -58,8 +55,7 @@ class DrumNoteComboBox : public juce::ComboBox
 class DrummerQueenAudioProcessorEditor
   : public juce::AudioProcessorEditor,
     public juce::ChangeListener,
-    public juce::Slider::Listener,
-	public juce::MidiKeyboardStateListener
+    public juce::Slider::Listener
 {
 public:
     DrummerQueenAudioProcessorEditor (DrummerQueenAudioProcessor&);
@@ -75,17 +71,6 @@ public:
         m_grid.setPosition(audioProcessor.barPos());
         repaint();
     }
-    void handleNoteOn(juce::MidiKeyboardState* source,
-        int	midiChannel,
-        int	midiNoteNumber,
-        float	velocity) override;
-
-	void handleNoteOff(juce::MidiKeyboardState* source,
-		int	midiChannel,
-		int	midiNoteNumber,
-		float	velocity) override
-	{
-	}
 
     void delete_lane();
 
