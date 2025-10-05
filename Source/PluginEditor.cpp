@@ -88,10 +88,11 @@ DrummerQueenAudioProcessorEditor::DrummerQueenAudioProcessorEditor (DrummerQueen
     }
 	m_velocity_buttons.front()->setToggleState(true, juce::dontSendNotification);
 
+    addAndMakeVisible(m_pattern_button_parent);
     update_pattern_buttons();
 	m_add_pattern_button.setButtonText("+");
 	m_add_pattern_button.onClick = [this] {data().set_current_pattern(data().add_pattern()); update_pattern_buttons(); };
-    addAndMakeVisible(m_add_pattern_button);
+    m_pattern_button_parent.addAndMakeVisible(m_add_pattern_button);
 
 	m_sequence_editor.setText(data().get_sequence_str());
     addAndMakeVisible(m_sequence_editor);
@@ -199,21 +200,7 @@ void DrummerQueenAudioProcessorEditor::resized()
     x += 80;
     m_time_signature_box.setBounds(x, 32, 64, 24);
     int y = 64;
-    //for (auto& name : m_lane_combo_boxes)
-    //{
-	//	name->setBounds(8, y, 132, 24);
-     //   y += 24;
-    //}
     m_swing_slider.setBounds(m_grid_left, 8, 200, 24);
-
-    x = m_grid_left;
-	y = grid_bottom + 8;
-	for (auto& pb : m_pattern_buttons)
-	{
-		pb->setBounds(x, y, 24, 24);
-		x += 26;
-	}
-	m_add_pattern_button.setBounds(x, y, 24, 24);
 
 	m_play_sequence_button.setBounds(8, grid_bottom + 36, 24, 24);
     m_sequence_editor.setBounds(m_grid_left, grid_bottom + 36, width-80, 24);
@@ -233,6 +220,86 @@ void DrummerQueenAudioProcessorEditor::delete_lane()
 {
 }
 
+void DrummerQueenAudioProcessorEditor::drag_onto_pattern(int pattern_index, const juce::StringArray& files)
+{
+    if (files.size() < 1) {
+        return;
+    }
+
+    juce::File f(files[0]);
+    if (!f.existsAsFile()) {
+        return;
+    }
+
+    juce::FileInputStream stream(f);
+    if (!stream.openedOk()) {
+        return;
+    }
+
+    juce::MidiFile midi_file;
+    if (!midi_file.readFrom(stream)) {
+        return;
+    }
+
+    auto ticks_per_beat = midi_file.getTimeFormat();
+    if (ticks_per_beat <= 0) {
+        return;
+    }
+
+    std::set<int> notes;
+    auto num_tracks = midi_file.getNumTracks();
+    for (int i = 0; i < num_tracks; ++i)
+    {
+        const juce::MidiMessageSequence* track = midi_file.getTrack(i);
+        for (int j = 0; j < track->getNumEvents(); ++j)
+        {
+            auto& e = track->getEventPointer(j)->message;
+            if (e.isNoteOn())
+            {
+                int note = e.getNoteNumber();
+                notes.insert(note);
+            }
+        }
+    }
+
+    DrumPattern pattern;
+    std::map<int, int> lane_from_note;
+    for (auto note : notes)
+    {
+        auto it = std::find_if(general_midi.begin(), general_midi.end(), [note](auto const& d) { return d.note == note; });
+        if (it != general_midi.end())
+        {
+            pattern.lanes.push_back({ data().total_divisions() });
+			pattern.lanes.back().note = note;
+			lane_from_note[note] = (int)pattern.lanes.size() - 1;
+        }
+    }
+
+    for (int i = 0; i < num_tracks; ++i)
+    {
+        const juce::MidiMessageSequence* track = midi_file.getTrack(i);
+        for (int j = 0; j < track->getNumEvents(); ++j)
+        {
+            auto& e = track->getEventPointer(j)->message;
+            if (e.isNoteOn())
+            {
+                int note = e.getNoteNumber();
+				int lane = lane_from_note[note];
+				int division = static_cast<int>(data().beat_divisions() * e.getTimeStamp() / ticks_per_beat);
+				if (division >= 0 && division < data().total_divisions())
+				{
+					pattern.lanes[lane].velocity[division] = e.getVelocity();
+				}
+            }
+        }
+    }
+
+	data().set_pattern(pattern_index, pattern);
+	set_pattern(pattern_index);
+
+	m_grid.repaint();
+}
+
 void DrummerQueenAudioProcessorEditor::sliderValueChanged(juce::Slider* slider)
 {
 	if (slider == &m_swing_slider) {
@@ -244,6 +311,15 @@ void DrummerQueenAudioProcessorEditor::set_pattern(int i)
 {
     data().set_current_pattern(i);
 	auto const &pattern = data().get_current_pattern();
+    for (auto& pb : m_lane_combo_boxes)
+    {
+        removeChildComponent(pb.get());
+    }
+    for (auto& pb : m_lane_name_buttons)
+    {
+        removeChildComponent(pb.get());
+    }
+
     m_lane_combo_boxes.clear();
 	m_lane_name_buttons.clear();
     int y = 64;
@@ -271,21 +347,26 @@ void DrummerQueenAudioProcessorEditor::set_pattern(int i)
 
 void DrummerQueenAudioProcessorEditor::update_pattern_buttons()
 {
+	for (auto& pb : m_pattern_buttons)
+	{
+		removeChildComponent(pb.get());
+	}
 	m_pattern_buttons.clear();
 
 	int n_patterns = data().pattern_count();
     for (int i = 0; i < n_patterns; ++i)
     {
-        m_pattern_buttons.emplace_back(std::make_unique<PatternButton>(i));
-        m_pattern_buttons.back()->onClick = [this, i] {set_pattern(i); };
+        m_pattern_buttons.emplace_back(std::make_unique<PatternButton>(this, i));
+        m_pattern_buttons.back()->onClick = [this, i] {set_pattern(i);};
 		m_pattern_buttons.back()->setRadioGroupId(2);
-		addAndMakeVisible(m_pattern_buttons.back().get());
+        m_pattern_button_parent.addAndMakeVisible(m_pattern_buttons.back().get());
     }
 	m_pattern_buttons[data().get_current_pattern_id()]->setToggleState(true, juce::dontSendNotification);
     int height = data().lane_count() * m_note_height;
     int grid_bottom = m_grid_top + height;
-    int x = m_grid_left;
-    int y = grid_bottom + 8;
+    m_pattern_button_parent.setBounds(m_grid_left, grid_bottom + 8, 24 * 16, 24);
+    int x = 0;
+    int y = 0;
     for (auto& pb : m_pattern_buttons)
     {
         pb->setBounds(x, y, 24, 24);
@@ -348,4 +429,42 @@ void DrumNoteComboBox::paint(juce::Graphics& g)
     g.drawRect(getLocalBounds());
     char label[2] = { 'v', 0 };
     g.drawText(label, getLocalBounds(), juce::Justification::centred);
+}
+
+/*
+void PatternButton::paint(juce::Graphics& g)
+{
+    g.fillAll(juce::Colours::black);
+    g.setColour(juce::Colours::white);
+
+    char label[2] = { char(m_pattern) + 'A', 0 };
+    g.drawText(label, getLocalBounds(), juce::Justification::centred);
+}
+*/
+void PatternButton::paintButton(juce::Graphics& g, bool shouldDrawButtonAsHighlighted, bool shouldDrawButtonAsDown)
+{
+    g.fillAll(juce::Colours::black);
+    if (getToggleState())
+    {
+        g.setColour(juce::Colours::white);
+    }
+    else
+    {
+        g.setColour(juce::Colours::grey);
+    }
+
+    char label[2] = { char(m_pattern) + 'A', 0 };
+    g.drawText(label, getLocalBounds(), juce::Justification::centred);
+}
+
+
+
+inline bool PatternButton::isInterestedInFileDrag(const juce::StringArray& files)
+{
+    return true;
+}
+
+void PatternButton::filesDropped(const juce::StringArray& files, int x, int y)
+{
+	m_editor->drag_onto_pattern(m_pattern, files);
 }

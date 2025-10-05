@@ -15,6 +15,28 @@
 #include <vector>
 #include <memory>
 
+class DrummerQueenAudioProcessorEditor;
+
+class PatternButton : public juce::ToggleButton, public juce::FileDragAndDropTarget
+{
+public:
+    PatternButton(DrummerQueenAudioProcessorEditor *editor, int pattern) : m_editor(editor), m_pattern(pattern) {}
+
+    //void paint(juce::Graphics& g) override;
+
+
+    void paintButton(juce::Graphics& g,
+        bool	shouldDrawButtonAsHighlighted,
+        bool	shouldDrawButtonAsDown) override;
+
+	bool isInterestedInFileDrag(const juce::StringArray& files) override;
+	void filesDropped(const juce::StringArray& files, int x, int y) override;
+
+	DrummerQueenAudioProcessorEditor* m_editor = nullptr;
+    int m_pattern;
+
+};
+
 
 class DragButton : public juce::TextButton
 {
@@ -67,7 +89,7 @@ public:
 
     void delete_lane();
 
-
+	void drag_onto_pattern(int pattern, const juce::StringArray& files);
 private:
     void drag_midi();
     void sliderValueChanged(juce::Slider* slider) override;
@@ -80,7 +102,8 @@ private:
 
     DrumGrid m_grid;
     std::vector<std::unique_ptr<juce::ToggleButton>> m_velocity_buttons;
-    std::vector<std::unique_ptr<juce::ToggleButton>> m_pattern_buttons;
+    juce::Component m_pattern_button_parent;
+    std::vector<std::unique_ptr<PatternButton>> m_pattern_buttons;
     juce::TextButton m_add_pattern_button;
     std::vector<std::unique_ptr<juce::TextButton>> m_lane_name_buttons;
     std::vector<std::unique_ptr<juce::ComboBox>> m_lane_combo_boxes;

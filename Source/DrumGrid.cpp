@@ -116,18 +116,3 @@ void VelocityButton::paintButton(juce::Graphics& g, bool shouldDrawButtonAsHighl
 
 }
 
-void PatternButton::paintButton(juce::Graphics& g, bool shouldDrawButtonAsHighlighted, bool shouldDrawButtonAsDown)
-{
-    g.fillAll(juce::Colours::black);
-    if (getToggleState())
-    {
-        g.setColour(juce::Colours::white);
-    }
-    else
-    {
-        g.setColour(juce::Colours::grey);
-    }
-
-	char label[2] = { char(m_pattern) + 'A', 0 };
-    g.drawText(label, getLocalBounds(), juce::Justification::centred);
-}

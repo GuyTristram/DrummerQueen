@@ -123,6 +123,16 @@ void DrumData::set_current_pattern(int pattern)
 	m_current_pattern = pattern;
 }
 
+void DrumData::set_pattern(int pattern_index, DrumPattern const& pattern)
+{
+	if (pattern_index < 0 || pattern_index >= m_patterns.size())
+	{
+		return;
+	}
+	m_patterns[pattern_index] = pattern;
+	update_events(pattern_index);
+}
+
 void DrumData::set_sequence_str(std::string const& sequence)
 {
 	m_sequence_str.clear();

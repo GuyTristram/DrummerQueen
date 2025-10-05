@@ -28,16 +28,6 @@ public:
     int m_velocity;
 };
 
-class PatternButton : public juce::ToggleButton
-{
-public:
-    PatternButton(int pattern) : m_pattern(pattern) {}
-    void paintButton(juce::Graphics& g,
-        bool	shouldDrawButtonAsHighlighted,
-        bool	shouldDrawButtonAsDown) override;
-    int m_pattern;
-};
-
 class DrumGrid : public juce::Component
 {
 public:
