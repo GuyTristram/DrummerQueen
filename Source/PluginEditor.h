@@ -122,7 +122,7 @@ private:
     juce::FileListComponent m_file_list;
 */
 	juce::FileBrowserComponent m_file_list;
-    void selectionChanged() override {}
+    void selectionChanged() override;
     void fileClicked(const juce::File & file, const juce::MouseEvent & e) override;
     void fileDoubleClicked(const juce::File & file) override {}
     void browserRootChanged(const juce::File & newRoot) override;

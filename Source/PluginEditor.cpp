@@ -428,17 +428,20 @@ void DrummerQueenAudioProcessorEditor::select_time_signature()
 	}
 }
 
-inline void DrummerQueenAudioProcessorEditor::fileClicked(const juce::File& file, const juce::MouseEvent& e)
+void DrummerQueenAudioProcessorEditor::selectionChanged()
 {
-	if (file.existsAsFile())
-	{
-		juce::StringArray files;
-		files.add(file.getFullPathName());
-		drag_onto_pattern(data().get_current_pattern_id(), files);
-	}
+    if (m_file_list.getNumSelectedFiles() > 0) {
+        juce::StringArray files;
+        files.add(m_file_list.getSelectedFile(0).getFullPathName());
+        drag_onto_pattern(data().get_current_pattern_id(), files);
+    }
 }
 
-inline void DrummerQueenAudioProcessorEditor::browserRootChanged(const juce::File& newRoot)
+void DrummerQueenAudioProcessorEditor::fileClicked(const juce::File& file, const juce::MouseEvent& e)
+{
+}
+
+void DrummerQueenAudioProcessorEditor::browserRootChanged(const juce::File& newRoot)
 {
 	data().m_midi_file_directory = newRoot.getFullPathName().toStdString();
 }
@@ -497,7 +500,7 @@ void PatternButton::paintButton(juce::Graphics& g, bool shouldDrawButtonAsHighli
 
 
 
-inline bool PatternButton::isInterestedInFileDrag(const juce::StringArray& files)
+bool PatternButton::isInterestedInFileDrag(const juce::StringArray& files)
 {
     return true;
 }
