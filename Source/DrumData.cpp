@@ -102,8 +102,16 @@ namespace
 
 void DrumData::add_drum(std::string name, int note)
 {
-	m_patterns[m_current_pattern].lanes.emplace_back(m_beats * m_beat_divisions);
-	m_patterns[m_current_pattern].lanes.back().note = note;
+	do_action(
+		[this, note]
+		{
+			m_patterns[m_current_pattern].lanes.emplace_back(m_beats * m_beat_divisions);
+			m_patterns[m_current_pattern].lanes.back().note = note;
+		},
+		[this, pattern = m_current_pattern]
+		{
+			m_patterns[pattern].lanes.pop_back();
+		});
 }
 
 int DrumData::add_pattern()

@@ -65,7 +65,14 @@ std::vector<DrumInfo> general_midi = {
 }
 //==============================================================================
 DrummerQueenAudioProcessorEditor::DrummerQueenAudioProcessorEditor (DrummerQueenAudioProcessor& p)
-	: AudioProcessorEditor(&p), audioProcessor(p), m_grid(p.m_data)
+	: AudioProcessorEditor(&p), audioProcessor(p), m_grid(p.m_data),
+    m_midi_file_filter("*.mid;*.midi", "*.*", "MIDI Files (*.mid;*.midi)"),
+    /*
+    m_time_slice_thread("File IO Thread"),
+	m_directory_contents(&m_midi_file_filter, m_time_slice_thread),
+    m_file_list(m_directory_contents)
+    */
+	m_file_list(juce::FileBrowserComponent::canSelectFiles | juce::FileBrowserComponent::openMode, juce::File(), &m_midi_file_filter, nullptr)
 {
 
 
@@ -145,8 +152,12 @@ DrummerQueenAudioProcessorEditor::DrummerQueenAudioProcessorEditor (DrummerQueen
 
 	set_pattern(0);
 
+	//m_time_slice_thread.startThread();
+	//m_directory_contents.setDirectory(juce::File::getSpecialLocation(juce::File::userDocumentsDirectory), true, true);
+	addAndMakeVisible(m_file_list);
+	m_file_list.addListener(this);
 
-    setSize(540, 448);
+    setSize(750, 448);
     audioProcessor.addChangeListener(this);
 
 }
@@ -188,6 +199,7 @@ void DrummerQueenAudioProcessorEditor::resized()
 	int height = MAX_LANES * m_note_height;
     resize_grid();
 	int grid_bottom = m_grid_top + height;
+	m_file_list.setBounds(m_grid_left + width + 8, m_grid_top, getWidth() - (m_grid_left + width + 16), height - 32);
 
 	m_undo_button.setBounds(8, 8, 40, 24);
 	m_redo_button.setBounds(8, 32, 40, 24);
@@ -343,6 +355,25 @@ void DrummerQueenAudioProcessorEditor::set_pattern(int i)
 		addAndMakeVisible(*m_lane_name_buttons.back());
         y += 24;
     }
+	if (data().lane_count() < MAX_LANES) {
+		m_add_lane_button.setButtonText("+");
+		m_add_lane_button.setBounds(8, y, 108, 25);
+		m_add_lane_button.onClick = [this]
+			{
+				if (data().lane_count() < MAX_LANES)
+				{
+					data().add_drum("Drum", general_midi[0].note);
+					set_pattern(data().get_current_pattern_id());
+					resize_grid();
+					m_grid.repaint();
+				}
+			};
+		addAndMakeVisible(m_add_lane_button);
+	}
+	else
+	{
+		removeChildComponent(&m_add_lane_button);
+	}
     resize_grid();
     m_grid.repaint();
 }
@@ -393,6 +424,16 @@ void DrummerQueenAudioProcessorEditor::select_time_signature()
 			m_time_signature_box.setSelectedId(i + 1, juce::dontSendNotification);
 			return;
 		}
+	}
+}
+
+inline void DrummerQueenAudioProcessorEditor::fileClicked(const juce::File& file, const juce::MouseEvent& e)
+{
+	if (file.existsAsFile())
+	{
+		juce::StringArray files;
+		files.add(file.getFullPathName());
+		drag_onto_pattern(data().get_current_pattern_id(), files);
 	}
 }
 

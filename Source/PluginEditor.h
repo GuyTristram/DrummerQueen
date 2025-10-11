@@ -55,7 +55,8 @@ class DrumNoteComboBox : public juce::ComboBox
 class DrummerQueenAudioProcessorEditor
   : public juce::AudioProcessorEditor,
     public juce::ChangeListener,
-    public juce::Slider::Listener
+    public juce::Slider::Listener,
+    public juce::FileBrowserListener
 {
 public:
     DrummerQueenAudioProcessorEditor (DrummerQueenAudioProcessor&);
@@ -90,8 +91,11 @@ private:
     juce::Component m_pattern_button_parent;
     std::vector<std::unique_ptr<PatternButton>> m_pattern_buttons;
     juce::TextButton m_add_pattern_button;
+
     std::vector<std::unique_ptr<juce::TextButton>> m_lane_name_buttons;
     std::vector<std::unique_ptr<juce::ComboBox>> m_lane_combo_boxes;
+    juce::TextButton m_add_lane_button;
+
     juce::Slider m_swing_slider;
 
     juce::TextButton m_undo_button;
@@ -109,6 +113,19 @@ private:
 	void select_time_signature();
 
     DragButton m_drag_button;
+
+    juce::WildcardFileFilter m_midi_file_filter;
+    /*
+	juce::TimeSliceThread m_time_slice_thread;
+	juce::WildcardFileFilter m_midi_file_filter;
+    juce::DirectoryContentsList m_directory_contents;
+    juce::FileListComponent m_file_list;
+*/
+	juce::FileBrowserComponent m_file_list;
+    void selectionChanged() override {}
+    void fileClicked(const juce::File & file, const juce::MouseEvent & e) override;
+    void fileDoubleClicked(const juce::File & file) override {}
+    void browserRootChanged(const juce::File & newRoot) override {}
 
 
     int m_grid_top = 64;
