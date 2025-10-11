@@ -155,9 +155,10 @@ DrummerQueenAudioProcessorEditor::DrummerQueenAudioProcessorEditor (DrummerQueen
 	//m_time_slice_thread.startThread();
 	//m_directory_contents.setDirectory(juce::File::getSpecialLocation(juce::File::userDocumentsDirectory), true, true);
 	addAndMakeVisible(m_file_list);
+	m_file_list.setRoot(juce::File(data().m_midi_file_directory));
 	m_file_list.addListener(this);
 
-    setSize(750, 448);
+    setSize(770, 448);
     audioProcessor.addChangeListener(this);
 
 }
@@ -199,7 +200,7 @@ void DrummerQueenAudioProcessorEditor::resized()
 	int height = MAX_LANES * m_note_height;
     resize_grid();
 	int grid_bottom = m_grid_top + height;
-	m_file_list.setBounds(m_grid_left + width + 8, m_grid_top, getWidth() - (m_grid_left + width + 16), height - 32);
+	m_file_list.setBounds(m_grid_left + width + 8, 32, getWidth() - (m_grid_left + width + 16), getHeight() - 62);
 
 	m_undo_button.setBounds(8, 8, 40, 24);
 	m_redo_button.setBounds(8, 32, 40, 24);
@@ -435,6 +436,11 @@ inline void DrummerQueenAudioProcessorEditor::fileClicked(const juce::File& file
 		files.add(file.getFullPathName());
 		drag_onto_pattern(data().get_current_pattern_id(), files);
 	}
+}
+
+inline void DrummerQueenAudioProcessorEditor::browserRootChanged(const juce::File& newRoot)
+{
+	data().m_midi_file_directory = newRoot.getFullPathName().toStdString();
 }
 
 void DrummerQueenAudioProcessorEditor::drag_midi()

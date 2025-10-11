@@ -298,9 +298,10 @@ std::string DrumData::to_json() const
 {
 	using json = nlohmann::json;
 	json j;
-	j["version"] = 1;
+	j["version"] = 2;
 	j["beats"] = m_beats;
 	j["beat_divisions"] = m_beat_divisions;
+	j["midi_file_directory"] = m_midi_file_directory;
 	j["swing"] = m_swing;
 	j["patterns"] = json::array();
 	for (auto& pattern : m_patterns)
@@ -327,6 +328,7 @@ void DrumData::from_json(std::string const& json_string)
 	int version = j.value("version", 0);
 	m_beats = j["beats"];
 	m_beat_divisions = j["beat_divisions"];
+	m_midi_file_directory = j.value("midi_file_directory", juce::File::getSpecialLocation(juce::File::commonDocumentsDirectory).getFullPathName().toStdString());
 	m_swing = j["swing"];
 	DrumKit kit;
 	if (version == 0)

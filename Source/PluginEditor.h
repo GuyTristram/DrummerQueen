@@ -125,7 +125,7 @@ private:
     void selectionChanged() override {}
     void fileClicked(const juce::File & file, const juce::MouseEvent & e) override;
     void fileDoubleClicked(const juce::File & file) override {}
-    void browserRootChanged(const juce::File & newRoot) override {}
+    void browserRootChanged(const juce::File & newRoot) override;
 
 
     int m_grid_top = 64;

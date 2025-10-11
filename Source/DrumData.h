@@ -125,6 +125,8 @@ public:
 	void undo();
 	void redo();
 
+	std::string m_midi_file_directory;
+
 private:
 	void update_events();
 	void update_events(int pattern);
@@ -138,6 +140,7 @@ private:
 	std::vector<int> m_sequence;
 	bool m_play_sequence = false;
 	int m_sequence_length = 0;
+
 
 	DrumDataListener& m_listener;
 
