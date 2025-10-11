@@ -18,7 +18,7 @@ void DrumGrid::paint(juce::Graphics& g)
     int total_divisions = m_data.total_divisions();
 	int beat_divisions = m_data.beat_divisions();
     // Fill background
-    g.setColour({ 128, 128, 128 });
+    g.setColour({ 92, 92, 128 });
     g.fillRect(0, 0, total_divisions * m_note_width, m_data.lane_count() * m_lane_height);
 
     // Draw time
@@ -51,15 +51,7 @@ void DrumGrid::paint(juce::Graphics& g)
 			int v = m_data.get_hit(lane, sub_beat);
             if (v > 0)
             {
-                int max_size = std::min(m_note_width, m_lane_height) - 8;
-
-                int min_size = max_size / 7;
-
-                int size = v / 127.0 * (max_size - min_size) + min_size;
-                int border = (std::min(m_note_width, m_lane_height) - size) / 2;
-                //g.fillRoundedRectangle(border, border, getWidth() - border * 2, getHeight() - border * 2, size / 2);
-                g.fillEllipse(x + border, y + border, m_note_width - border * 2, m_lane_height - border * 2);
-
+				draw_note(g, lane, sub_beat, v);
             }
             x += m_note_width;
         }
@@ -67,6 +59,28 @@ void DrumGrid::paint(juce::Graphics& g)
         y += m_lane_height;
     }
 
+}
+
+void DrumGrid::draw_note(juce::Graphics& g, int lane, int sub_beat, int velocity)
+{
+	int x = sub_beat * m_note_width;
+	int y = lane * m_lane_height;
+	int max_size = std::min(m_note_width, m_lane_height) - 8;
+	int min_size = max_size / 7;
+	int size = velocity / 127.0 * (max_size - min_size) + min_size;
+	int border = (std::min(m_note_width, m_lane_height) - size) / 2;
+	//g.fillRoundedRectangle(border, border, getWidth() - border * 2, getHeight() - border * 2, size / 2);
+    if (m_style == 0) {
+        g.fillEllipse(x + border, y + border, m_note_width - border * 2, m_lane_height - border * 2);
+    }
+    else {
+        border -= 2;
+        juce::Path p;
+        p.startNewSubPath(x + 2, y + border);
+        p.lineTo(x + m_note_width - border * 2, y + m_lane_height / 2);
+        p.lineTo(x + 2, y + m_lane_height - border);
+        g.fillPath(p);
+    }
 }
 
 void DrumGrid::mouseDown(const juce::MouseEvent& event)

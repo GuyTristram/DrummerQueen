@@ -328,7 +328,7 @@ void DrumData::from_json(std::string const& json_string)
 	int version = j.value("version", 0);
 	m_beats = j["beats"];
 	m_beat_divisions = j["beat_divisions"];
-	m_midi_file_directory = j.value("midi_file_directory", juce::File::getSpecialLocation(juce::File::commonDocumentsDirectory).getFullPathName().toStdString());
+	m_midi_file_directory = j.value("midi_file_directory", juce::File::getSpecialLocation(juce::File::userDocumentsDirectory).getFullPathName().toStdString());
 	m_swing = j["swing"];
 	DrumKit kit;
 	if (version == 0)

@@ -35,14 +35,16 @@ public:
 
     //==============================================================================
     void paint (juce::Graphics&) override;
+	void draw_note(juce::Graphics& g, int lane, int sub_beat, int velocity);
     void mouseDown(const juce::MouseEvent& event) override;
     void setPosition(double p) { m_position = p; }
 
 	void set_new_velocity(int v) { m_new_velocity = v; }
 
+    void set_style(int style) { m_style = style; repaint(); }
 private:
     DrumData& m_data;
-
+	int m_style = 1; // 0 = blocks, 1 = triangles
     int m_lane_height = 24;
     int m_note_width = 24;
 

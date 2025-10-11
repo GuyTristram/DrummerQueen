@@ -61,7 +61,8 @@ class DrumData
 {
 public:
     DrumData(int beats, int beat_divisions, DrumDataListener &listener)
-		: m_beats(beats), m_beat_divisions(beat_divisions), m_listener(listener), m_patterns(1)
+		: m_beats(beats), m_beat_divisions(beat_divisions), m_listener(listener), m_patterns(1),
+		m_midi_file_directory(juce::File::getSpecialLocation(juce::File::userDocumentsDirectory).getFullPathName().toStdString())
     {
 	}
 
