@@ -446,10 +446,11 @@ void DrummerQueenAudioProcessorEditor::drag_midi()
     juce::File tempDirectory = juce::File::getSpecialLocation(juce::File::tempDirectory);
     juce::File tempFile = tempDirectory.getChildFile("pattern.midi");
     juce::MidiMessageSequence midi_sequence;
-    auto sequence = data().is_playing_sequence() ? data().get_sequence() : std::vector<SequenceItem>{ {.0f, data().get_current_pattern_id() } };
+    auto sequence = data().is_playing_sequence() ? data().get_sequence() : std::vector<SequenceItem>{ {.0f,4.f, data().get_current_pattern_id() } };
     int tpq = 960;
 	for (auto p : sequence)
 	{
+        // TODO fix this!
         data().get_events(p.pattern, 0., data().beats(), p.start_beat, data().beats() * tpq, midi_sequence);
 	}
     juce::MidiFile midi_file;

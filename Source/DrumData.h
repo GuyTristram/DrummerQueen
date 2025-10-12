@@ -62,6 +62,7 @@ struct Action
 struct SequenceItem
 {
 	double start_beat = 0.f;
+	double end_beat = 0.f;
 	int pattern = 0;
 };
 
@@ -73,6 +74,7 @@ public:
 		: m_listener(listener), m_patterns(1),
 		m_midi_file_directory(juce::File::getSpecialLocation(juce::File::userDocumentsDirectory).getFullPathName().toStdString())
     {
+		m_current_pattern_sequence.push_back({ 0.f, 4.f, 0 });
 	}
 
     void add_drum(std::string name, int note);
@@ -123,7 +125,36 @@ public:
 	template <typename MB>
 	void get_events(double start_time, double end_time, int num_samples, MB& midiMessages)
 	{
-		get_events(m_current_pattern, start_time, end_time, 0.0, num_samples, midiMessages);
+		auto const& sequence = m_play_sequence ? m_sequence : m_current_pattern_sequence;
+		if (sequence.size() == 0) {
+			return;
+		}
+		double sequence_length_beats = sequence.back().end_beat;
+		double start_time_wrap = fmod(start_time, sequence_length_beats);
+		double num_wraps = std::floor(start_time / sequence_length_beats);
+		double end_time_wrap = end_time - start_time + start_time_wrap;
+		int seq_index = 0;
+		for (; seq_index < sequence.size(); ++seq_index)
+		{
+			if (sequence[seq_index].end_beat >= start_time_wrap)
+			{
+				break;
+			}
+		}
+		double time = start_time;
+		while (time < end_time)
+		{
+			auto& item = sequence[seq_index];
+			get_events(item.pattern, start_time_wrap - item.start_beat, end_time_wrap - item.start_beat, item.start_beat + num_wraps * sequence_length_beats, num_samples, midiMessages);
+			time += item.end_beat - start_time_wrap;
+			seq_index = (seq_index + 1) % sequence.size();
+			if (seq_index == 0)
+			{
+				num_wraps += 1.;
+				start_time_wrap -= sequence_length_beats;
+				end_time_wrap -= sequence_length_beats;
+			}
+		}
 	}
 
 	std::string to_json() const;
@@ -140,12 +171,14 @@ public:
 private:
 	void update_events();
 	void update_events(int pattern);
+	void update_sequence();
 	std::vector<DrumPattern> m_patterns;
 	int m_current_pattern = 0;
 	float m_swing = 0.5f;
 
 	std::string m_sequence_str;
 	std::vector<SequenceItem> m_sequence;
+	std::vector<SequenceItem> m_current_pattern_sequence;
 	bool m_play_sequence = false;
 	int m_sequence_length = 0;
 

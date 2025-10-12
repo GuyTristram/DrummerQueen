@@ -18,7 +18,7 @@ namespace
 			else if (isalpha(*c)) {
 				auto n = tolower(*c) - 'a';
 				for (int i = 0; i < repeat; ++i) {
-					result.push_back({ 0.f, n });
+					result.push_back({ 0.f, 0.f, n });
 				}
 				repeat = 1;
 				++c;
@@ -48,7 +48,8 @@ namespace
 		for (auto& item : seq) {
 			if (item.pattern >= 0 && item.pattern < patterns.size()) {
 				item.start_beat = beat_time;
-				beat_time += patterns[item.pattern].time_signature.beats;
+				item.end_beat = item.start_beat + patterns[item.pattern].time_signature.beats;
+				beat_time = item.end_beat;
 			}
 			else {
 				item.start_beat = beat_time;
@@ -140,6 +141,9 @@ void DrumData::set_current_pattern(int pattern)
 		return;
 	}
 	m_current_pattern = pattern;
+	m_current_pattern_sequence[0].pattern = pattern;
+	m_current_pattern_sequence[0].start_beat = 0.;
+	m_current_pattern_sequence[0].end_beat = m_patterns[m_current_pattern].time_signature.beats;
 }
 
 void DrumData::set_pattern(int pattern_index, DrumPattern const& pattern)
@@ -209,11 +213,16 @@ void DrumData::set_sequence_str(std::string const& sequence)
 		auto len = count_seq(c);
 		if (len < 10000)
 		{
-			m_sequence_length = len;
+			m_sequence_length = int(len);
 			c = m_sequence_str.c_str();
 			m_sequence = parse_seq(c, m_patterns);
 		}
 	}
+}
+
+void DrumData::update_sequence()
+{
+	m_sequence = parse_seq(m_sequence_str.c_str(), m_patterns);
 }
 
 void DrumData::play_sequence(bool ps)
@@ -239,11 +248,13 @@ void DrumData::set_time_signature(int new_beats, int new_beat_divisions)
 			{
 				lane.velocity.resize(new_beats * new_beat_divisions);
 			}
+			update_sequence();
 			update_events();
 		},
 		[this, old_beats, old_beat_divisions, old_pattern = m_patterns[m_current_pattern], pattern_id = m_current_pattern]
 		{
 			m_patterns[pattern_id] = old_pattern;
+			update_sequence();
 			update_events();
 		});
 }
