@@ -105,7 +105,7 @@ void DrumData::add_drum(std::string name, int note)
 	do_action(
 		[this, note]
 		{
-			m_patterns[m_current_pattern].lanes.emplace_back(m_beats * m_beat_divisions);
+			m_patterns[m_current_pattern].lanes.emplace_back(m_patterns[m_current_pattern].time_signature.total_divisions());
 			m_patterns[m_current_pattern].lanes.back().note = note;
 		},
 		[this, pattern = m_current_pattern]
@@ -210,33 +210,29 @@ void DrumData::play_sequence(bool ps)
 	m_play_sequence = ps;
 }
 
-void DrumData::set_time_signature(int beats, int beat_divisions)
+void DrumData::set_time_signature(int new_beats, int new_beat_divisions)
 {
-	if (beats <= 0 || beat_divisions <= 0)
+	if (new_beats <= 0 || new_beat_divisions <= 0)
 	{
 		return;
 	}
-	int old_beats = m_beats;
-	int old_beat_divisions = m_beat_divisions;
+	int old_beats = beats();
+	int old_beat_divisions = beat_divisions();
 	do_action(
-		[this, beats, beat_divisions]
+		[this, new_beats, new_beat_divisions]
 		{
-			m_beats = beats;
-			m_beat_divisions = beat_divisions;
-			for (auto& pattern : m_patterns)
+			auto& pattern = m_patterns[m_current_pattern];
+			pattern.time_signature.beats = new_beats;
+			pattern.time_signature.beat_divisions = new_beat_divisions;
+			for (auto& lane : pattern.lanes)
 			{
-				for (auto& lane : pattern.lanes)
-				{
-					lane.velocity.resize(m_beats * m_beat_divisions);
-				}
+				lane.velocity.resize(new_beats * new_beat_divisions);
 			}
 			update_events();
 		},
-		[this, old_beats, old_beat_divisions, patterns = m_patterns]
+		[this, old_beats, old_beat_divisions, old_pattern = m_patterns[m_current_pattern], pattern_id = m_current_pattern]
 		{
-			m_beats = old_beats;
-			m_beat_divisions = old_beat_divisions;
-			m_patterns = patterns;
+			m_patterns[pattern_id] = old_pattern;
 			update_events();
 		});
 }
@@ -298,15 +294,15 @@ std::string DrumData::to_json() const
 {
 	using json = nlohmann::json;
 	json j;
-	j["version"] = 2;
-	j["beats"] = m_beats;
-	j["beat_divisions"] = m_beat_divisions;
+	j["version"] = 3;
 	j["midi_file_directory"] = m_midi_file_directory;
 	j["swing"] = m_swing;
 	j["patterns"] = json::array();
 	for (auto& pattern : m_patterns)
 	{
 		json p;
+		p["beats"] = pattern.time_signature.beats;
+		p["beat_divisions"] = pattern.time_signature.beat_divisions;
 		p["lanes"] = json::array();
 		for (auto& lane : pattern.lanes)
 		{
@@ -326,12 +322,17 @@ void DrumData::from_json(std::string const& json_string)
 	using json = nlohmann::json;
 	auto j = json::parse(json_string);
 	int version = j.value("version", 0);
-	m_beats = j["beats"];
-	m_beat_divisions = j["beat_divisions"];
+	int beats = 4;
+	int beat_divisions = 4;
+	if (version < 3)
+	{
+		beats = j["beats"];
+		beat_divisions = j["beat_divisions"];
+	}
 	m_midi_file_directory = j.value("midi_file_directory", juce::File::getSpecialLocation(juce::File::userDocumentsDirectory).getFullPathName().toStdString());
 	m_swing = j["swing"];
 	DrumKit kit;
-	if (version == 0)
+	if (version < 1)
 	{
 		kit.name = j["kit"]["name"];
 		kit.drums.clear();
@@ -345,10 +346,20 @@ void DrumData::from_json(std::string const& json_string)
 	for (auto& p : j["patterns"])
 	{
 		DrumPattern pattern;
+		if (version < 3)
+		{
+			pattern.time_signature.beats = beats;
+			pattern.time_signature.beat_divisions = beat_divisions;
+		}
+		else
+		{
+			pattern.time_signature.beats = p["beats"];
+			pattern.time_signature.beat_divisions = p["beat_divisions"];
+		}
 		for (auto& l : p["lanes"])
 		{
 			DrumLane lane(0);
-			if (version == 0)
+			if (version < 1)
 			{
 				lane.note = kit.drums[pattern.lanes.size()].note;
 			}
@@ -367,23 +378,17 @@ void DrumData::from_json(std::string const& json_string)
 		update_events(pattern_count);
 		++pattern_count;
 	}
-	if (j.find("sequence") != j.end())
-	{
-		set_sequence_str(j["sequence"]);
-	}
-	else
-	{
-		set_sequence_str("");
-	}
+	set_sequence_str(j.value("sequence", ""));
 }
 
-void DrumData::update_events(int pattern)
+void DrumData::update_events(int pattern_id)
 {
-	m_patterns[pattern].m_events.clear();
-	double beat_from_division = 1. / m_beat_divisions;
+	auto& pattern = m_patterns[pattern_id];
+	pattern.m_events.clear();
+	double beat_from_division = 1. / pattern.time_signature.beat_divisions;
 	double swing_adjust1 = (0.5 - m_swing) * 2. * beat_from_division;
 	double swing_adjust2 = -swing_adjust1;
-	auto& lanes = m_patterns[pattern].lanes;
+	auto& lanes = pattern.lanes;
 	for (int division = 0; division < total_divisions(); ++division)
 	{
 		for (int lane = 0; lane < lanes.size(); ++lane)
@@ -402,10 +407,10 @@ void DrumData::update_events(int pattern)
 				}
 				e.note = lanes[lane].note;
 				e.velocity = lanes[lane].velocity[division];
-				m_patterns[pattern].m_events.push_back(e);
+				pattern.m_events.push_back(e);
 				e.velocity = 0;
-				e.beat_time += .9 / m_beat_divisions;
-				m_patterns[pattern].m_events.push_back(e);
+				e.beat_time += .9 / pattern.time_signature.beat_divisions;
+				pattern.m_events.push_back(e);
 			}
 		}
 	}
@@ -446,7 +451,6 @@ std::ostream& operator<<(std::ostream& out, const DrumData& data)
 {
 	auto& lanes = data.m_patterns[0].lanes;
 
-	out << data.m_beats << " " << data.m_beat_divisions << "\n";
 	out << lanes.size() << "\n";
 	for (int i = 0; i < lanes.size(); ++i)
 	{
@@ -462,7 +466,6 @@ std::ostream& operator<<(std::ostream& out, const DrumData& data)
 std::istream& operator>>(std::istream& in, DrumData& data)
 {
 	std::ofstream debug("c:/Temp/load_drum.txt");
-	in >> data.m_beats >> data.m_beat_divisions;
 	int lane_count;
 	in >> lane_count;
 	auto& lanes = data.m_patterns[0].lanes;

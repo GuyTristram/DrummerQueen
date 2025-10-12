@@ -37,10 +37,12 @@ struct TimeSignature
 {
 	int beats = 4;
 	int beat_divisions = 4;
+	int total_divisions() const { return beats * beat_divisions; }
 };
 
 struct DrumPattern
 {
+	TimeSignature time_signature;
 	std::vector<DrumLane> lanes;
 	std::vector<DrumEvent> m_events;
 };
@@ -61,7 +63,7 @@ class DrumData
 {
 public:
     DrumData(int beats, int beat_divisions, DrumDataListener &listener)
-		: m_beats(beats), m_beat_divisions(beat_divisions), m_listener(listener), m_patterns(1),
+		: m_listener(listener), m_patterns(1),
 		m_midi_file_directory(juce::File::getSpecialLocation(juce::File::userDocumentsDirectory).getFullPathName().toStdString())
     {
 	}
@@ -82,9 +84,9 @@ public:
 	bool is_playing_sequence() const { return m_play_sequence; }
 	std::vector<int> const& get_sequence() const { return m_sequence; }
 
-    int beats() const { return m_beats; }
-    int beat_divisions() const { return m_beat_divisions; }
-	int total_divisions() const { return m_beats * m_beat_divisions; }
+    int beats() const { return m_patterns[m_current_pattern].time_signature.beats; }
+    int beat_divisions() const { return m_patterns[m_current_pattern].time_signature.beat_divisions; }
+	int total_divisions() const { return m_patterns[m_current_pattern].time_signature.total_divisions(); }
 	void set_time_signature(int beats, int beat_divisions);
 	int pattern_count() const { return (int)m_patterns.size(); }
 
@@ -133,11 +135,14 @@ private:
 	void update_events(int pattern);
 	std::vector<DrumPattern> m_patterns;
 	int m_current_pattern = 0;
-    int m_beats = 4;
-    int m_beat_divisions = 4;
 	float m_swing = 0.5f;
 
 	std::string m_sequence_str;
+	struct SequenceItem
+	{
+		int start_beat;
+		int pattern;
+	};
 	std::vector<int> m_sequence;
 	bool m_play_sequence = false;
 	int m_sequence_length = 0;

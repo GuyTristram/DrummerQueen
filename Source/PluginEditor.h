@@ -67,7 +67,7 @@ public:
     void resize_grid();
     void resized() override;
 
-    void changeListenerCallback(juce::ChangeBroadcaster* source) override
+    void changeListenerCallback(juce::ChangeBroadcaster*) override
     {
         m_grid.setPosition(audioProcessor.barPos());
         repaint();
@@ -124,7 +124,7 @@ private:
 	juce::FileBrowserComponent m_file_list;
     void selectionChanged() override;
     void fileClicked(const juce::File & file, const juce::MouseEvent & e) override;
-    void fileDoubleClicked(const juce::File & file) override {}
+    void fileDoubleClicked(const juce::File &) override {}
     void browserRootChanged(const juce::File & newRoot) override;
 
 
