@@ -4,8 +4,8 @@
 
 namespace
 {
-	std::vector<int> parse_seq_impl(const char*& c) {
-		std::vector<int> result;
+	std::vector<SequenceItem> parse_seq_impl(const char*& c) {
+		std::vector<SequenceItem> result;
 		int repeat = 1;
 		while (*c) {
 			if (isdigit(*c)) {
@@ -18,7 +18,7 @@ namespace
 			else if (isalpha(*c)) {
 				auto n = tolower(*c) - 'a';
 				for (int i = 0; i < repeat; ++i) {
-					result.push_back(n);
+					result.push_back({ 0.f, n });
 				}
 				repeat = 1;
 				++c;
@@ -42,8 +42,19 @@ namespace
 		return result;
 	}
 
-	std::vector<int> parse_seq(const char* c) {
-		return parse_seq_impl(c);
+	std::vector<SequenceItem> parse_seq(const char* c, const std::vector<DrumPattern> &patterns) {
+		auto seq = parse_seq_impl(c);
+		double beat_time = 0.f;
+		for (auto& item : seq) {
+			if (item.pattern >= 0 && item.pattern < patterns.size()) {
+				item.start_beat = beat_time;
+				beat_time += patterns[item.pattern].time_signature.beats;
+			}
+			else {
+				item.start_beat = beat_time;
+			}
+		}
+		return seq;
 	}
 
 	bool validate(const char* c) {
@@ -200,7 +211,7 @@ void DrumData::set_sequence_str(std::string const& sequence)
 		{
 			m_sequence_length = len;
 			c = m_sequence_str.c_str();
-			m_sequence = parse_seq(c);
+			m_sequence = parse_seq(c, m_patterns);
 		}
 	}
 }

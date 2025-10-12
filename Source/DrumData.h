@@ -59,10 +59,17 @@ struct Action
 	std::function<void()> undo_action;
 };
 
+struct SequenceItem
+{
+	double start_beat = 0.f;
+	int pattern = 0;
+};
+
+
 class DrumData
 {
 public:
-    DrumData(int beats, int beat_divisions, DrumDataListener &listener)
+    DrumData(DrumDataListener &listener)
 		: m_listener(listener), m_patterns(1),
 		m_midi_file_directory(juce::File::getSpecialLocation(juce::File::userDocumentsDirectory).getFullPathName().toStdString())
     {
@@ -82,7 +89,7 @@ public:
 	int sequence_length() const { return m_sequence_length; }
 	void play_sequence(bool ps);
 	bool is_playing_sequence() const { return m_play_sequence; }
-	std::vector<int> const& get_sequence() const { return m_sequence; }
+	std::vector<SequenceItem> const& get_sequence() const { return m_sequence; }
 
     int beats() const { return m_patterns[m_current_pattern].time_signature.beats; }
     int beat_divisions() const { return m_patterns[m_current_pattern].time_signature.beat_divisions; }
@@ -138,12 +145,7 @@ private:
 	float m_swing = 0.5f;
 
 	std::string m_sequence_str;
-	struct SequenceItem
-	{
-		int start_beat;
-		int pattern;
-	};
-	std::vector<int> m_sequence;
+	std::vector<SequenceItem> m_sequence;
 	bool m_play_sequence = false;
 	int m_sequence_length = 0;
 

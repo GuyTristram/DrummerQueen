@@ -23,7 +23,7 @@ DrummerQueenAudioProcessor::DrummerQueenAudioProcessor()
                      #endif
                        ),
 #endif
-    m_data(4, 4, *this)
+    m_data(*this)
 {
     addParameter(m_swing = new juce::AudioParameterFloat("swing", // parameterID
         "Swing", // parameter name
@@ -96,21 +96,21 @@ int DrummerQueenAudioProcessor::getCurrentProgram()
     return 0;
 }
 
-void DrummerQueenAudioProcessor::setCurrentProgram (int index)
+void DrummerQueenAudioProcessor::setCurrentProgram (int)
 {
 }
 
-const juce::String DrummerQueenAudioProcessor::getProgramName (int index)
+const juce::String DrummerQueenAudioProcessor::getProgramName (int)
 {
     return {};
 }
 
-void DrummerQueenAudioProcessor::changeProgramName (int index, const juce::String& newName)
+void DrummerQueenAudioProcessor::changeProgramName (int, const juce::String&)
 {
 }
 
 //==============================================================================
-void DrummerQueenAudioProcessor::prepareToPlay (double sampleRate, int samplesPerBlock)
+void DrummerQueenAudioProcessor::prepareToPlay (double, int)
 {
     // Use this method as the place to do any pre-playback
     // initialisation that you need..
@@ -163,18 +163,6 @@ void DrummerQueenAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer,
     for (auto i = totalNumInputChannels; i < totalNumOutputChannels; ++i)
         buffer.clear (i, 0, buffer.getNumSamples());
 
-    // This is the place where you'd normally do the guts of your plugin's
-    // audio processing...
-    // Make sure to reset the state if your inner loop is processing
-    // the samples and the outer loop is handling the channels.
-    // Alternatively, you can process the samples with the channels
-    // interleaved by keeping the same state.
-    for (int channel = 0; channel < totalNumInputChannels; ++channel)
-    {
-        auto* channelData = buffer.getWritePointer (channel);
-
-        // ..do something to the data...
-    }
     auto num_samples = buffer.getNumSamples();
     auto buffer_length_seconds = num_samples / getSampleRate();
 
@@ -209,7 +197,7 @@ void DrummerQueenAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer,
                         {
                             auto sequence_pos = fmod(*beat_pos_begin / m_data.beats(), sequence_length);
                             auto sequence_pos_int = static_cast<int>(sequence_pos);
-                            m_data.set_current_pattern(sequence[sequence_pos_int]);
+                            m_data.set_current_pattern(sequence[sequence_pos_int].pattern);
                         }
                     }
                     m_data.get_events(m_bar_pos_beats, end_pos_beats, num_samples, midiMessages);
@@ -222,7 +210,7 @@ void DrummerQueenAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer,
                             auto beat_pos_end = *beat_pos_begin + buffer_length_beats;
                             auto sequence_pos = fmod(beat_pos_end / m_data.beats(), sequence_length);
                             auto sequence_pos_int = static_cast<int>(sequence_pos);
-                            m_data.set_current_pattern(sequence[sequence_pos_int]);
+                            m_data.set_current_pattern(sequence[sequence_pos_int].pattern);
                         }
                     }
                     if (end_pos_wrap < m_bar_pos_beats)

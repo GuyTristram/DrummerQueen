@@ -24,7 +24,7 @@ void DrumGrid::paint(juce::Graphics& g)
     // Draw time
     int x_time = int(m_note_width * m_data.beat_divisions() * m_position);
     g.setColour({ 200, 200, 0 });
-    g.drawVerticalLine(x_time, 0, m_lane_height * m_data.lane_count());
+    g.drawVerticalLine(x_time, 0.f, float(m_lane_height * m_data.lane_count()));
 
     // Draw grid
     for (int i = 0; i < total_divisions + 1; ++i)
@@ -33,12 +33,12 @@ void DrumGrid::paint(juce::Graphics& g)
             g.setColour({ 255, 255, 255 });
         else
             g.setColour({ 0, 0, 0 });
-        g.drawVerticalLine(i * m_note_width, 0, m_lane_height * m_data.lane_count());
+        g.drawVerticalLine(i * m_note_width, 0.f, float(m_lane_height * m_data.lane_count()));
     }
     for (int i = 0; i < m_data.lane_count() + 1; ++i)
     {
         g.setColour({ 255, 255, 255 });
-        g.drawHorizontalLine(i * m_lane_height, 0, m_note_width * total_divisions);
+        g.drawHorizontalLine(i * m_lane_height, 0.f, float(m_note_width * total_divisions));
     }
 
     // Draw notes
@@ -61,26 +61,30 @@ void DrumGrid::paint(juce::Graphics& g)
 
 }
 
-void DrumGrid::draw_note(juce::Graphics& g, int lane, int sub_beat, int velocity)
+void draw_note_in_style(juce::Graphics& g, int style, int velocity, float x, float y, float size)
 {
-	int x = sub_beat * m_note_width;
-	int y = lane * m_lane_height;
-	int max_size = std::min(m_note_width, m_lane_height) - 8;
-	int min_size = max_size / 7;
-	int size = velocity / 127.0 * (max_size - min_size) + min_size;
-	int border = (std::min(m_note_width, m_lane_height) - size) / 2;
-	//g.fillRoundedRectangle(border, border, getWidth() - border * 2, getHeight() - border * 2, size / 2);
-    if (m_style == 0) {
-        g.fillEllipse(x + border, y + border, m_note_width - border * 2, m_lane_height - border * 2);
+    float max_size = size - 8.f;
+    float min_size = max_size / 7.f;
+    float size_inside = float(velocity) / 127.f * (max_size - min_size) + min_size;
+    float border = (size - size_inside) / 2.f;
+    if (style == 0) {
+        g.fillEllipse(x + border, y + border, size - border * 2, size - border * 2);
     }
     else {
         border -= 2;
         juce::Path p;
         p.startNewSubPath(x + 2, y + border);
-        p.lineTo(x + m_note_width - border * 2, y + m_lane_height / 2);
-        p.lineTo(x + 2, y + m_lane_height - border);
+        p.lineTo(x + size - border * 2, y + size / 2);
+        p.lineTo(x + 2, y + size - border);
         g.fillPath(p);
     }
+}
+
+void DrumGrid::draw_note(juce::Graphics& g, int lane, int sub_beat, int velocity)
+{
+	float x = float(sub_beat * m_note_width);
+    float y = float(lane * m_lane_height);
+    draw_note_in_style(g, m_style, velocity, x, y, float(std::min(m_note_width, m_lane_height)));
 }
 
 void DrumGrid::mouseDown(const juce::MouseEvent& event)
@@ -107,7 +111,7 @@ void DrumGrid::mouseDown(const juce::MouseEvent& event)
     repaint();
 }
 
-void VelocityButton::paintButton(juce::Graphics& g, bool shouldDrawButtonAsHighlighted, bool shouldDrawButtonAsDown)
+void VelocityButton::paintButton(juce::Graphics& g, bool, bool )
 {
     g.fillAll(juce::Colours::black);
     if (getToggleState())
@@ -119,14 +123,8 @@ void VelocityButton::paintButton(juce::Graphics& g, bool shouldDrawButtonAsHighl
         g.setColour(juce::Colours::grey);
     }
 
-	int max_size = std::min(getWidth(), getHeight()) - 8;
+	int max_size = std::min(getWidth(), getHeight());
 
-	int min_size = max_size / 7;
-
-	int size = int(m_velocity / 127.0 * (max_size - min_size) + min_size);
-	int border = (getWidth() - size) / 2;
-    //g.fillRoundedRectangle(border, border, getWidth() - border * 2, getHeight() - border * 2, size / 2);
-	g.fillEllipse(border, border, getWidth() - border * 2, getHeight() - border * 2);
-
+	draw_note_in_style(g, 1, m_velocity, 0.f, 0.f, float(max_size));
 }
 

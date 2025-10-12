@@ -213,7 +213,6 @@ void DrummerQueenAudioProcessorEditor::resized()
     }
     x += 80;
     m_time_signature_box.setBounds(x, 32, 64, 24);
-    int y = 64;
     m_swing_slider.setBounds(m_grid_left, 8, 200, 24);
 
 	m_play_sequence_button.setBounds(8, grid_bottom + 36, 24, 24);
@@ -312,13 +311,13 @@ void DrummerQueenAudioProcessorEditor::drag_onto_pattern(int pattern_index, cons
 void DrummerQueenAudioProcessorEditor::sliderValueChanged(juce::Slider* slider)
 {
 	if (slider == &m_swing_slider) {
-		data().set_swing(m_swing_slider.getValue());
+		data().set_swing(float(m_swing_slider.getValue()));
 	}
 }
 
-void DrummerQueenAudioProcessorEditor::set_pattern(int i)
+void DrummerQueenAudioProcessorEditor::set_pattern(int index)
 {
-    data().set_current_pattern(i);
+    data().set_current_pattern(index);
 	auto const &pattern = data().get_current_pattern();
     for (auto& pb : m_lane_combo_boxes)
     {
@@ -412,7 +411,7 @@ void DrummerQueenAudioProcessorEditor::update_pattern_buttons()
 
 void DrummerQueenAudioProcessorEditor::add_time_signature(char const* name, int beats, int beat_divisions)
 {
-	m_time_signature_box.addItem(name, m_time_signatures.size() + 1);
+	m_time_signature_box.addItem(name, int(m_time_signatures.size() + 1));
 	m_time_signatures.push_back({ beats, beat_divisions });
 }
 
@@ -437,10 +436,6 @@ void DrummerQueenAudioProcessorEditor::selectionChanged()
     }
 }
 
-void DrummerQueenAudioProcessorEditor::fileClicked(const juce::File& file, const juce::MouseEvent& e)
-{
-}
-
 void DrummerQueenAudioProcessorEditor::browserRootChanged(const juce::File& newRoot)
 {
 	data().m_midi_file_directory = newRoot.getFullPathName().toStdString();
@@ -451,13 +446,11 @@ void DrummerQueenAudioProcessorEditor::drag_midi()
     juce::File tempDirectory = juce::File::getSpecialLocation(juce::File::tempDirectory);
     juce::File tempFile = tempDirectory.getChildFile("pattern.midi");
     juce::MidiMessageSequence midi_sequence;
-	auto sequence = data().is_playing_sequence() ? data().get_sequence() : std::vector<int>{ data().get_current_pattern_id() };
+    auto sequence = data().is_playing_sequence() ? data().get_sequence() : std::vector<SequenceItem>{ {.0f, data().get_current_pattern_id() } };
     int tpq = 960;
-	double offset = 0.;
 	for (auto p : sequence)
 	{
-        data().get_events(p, 0., data().beats(), offset, data().beats() * tpq, midi_sequence);
-		offset += data().beats();
+        data().get_events(p.pattern, 0., data().beats(), p.start_beat, data().beats() * tpq, midi_sequence);
 	}
     juce::MidiFile midi_file;
     midi_file.setTicksPerQuarterNote(tpq);
@@ -478,11 +471,11 @@ void DrumNoteComboBox::paint(juce::Graphics& g)
 {
     g.setColour(juce::Colours::white);
     g.drawRect(getLocalBounds());
-    char label[2] = { 'v', 0 };
-    g.drawText(label, getLocalBounds(), juce::Justification::centred);
+    char text[2] = { 'v', 0 };
+    g.drawText(text, getLocalBounds(), juce::Justification::centred);
 }
 
-void PatternButton::paintButton(juce::Graphics& g, bool shouldDrawButtonAsHighlighted, bool shouldDrawButtonAsDown)
+void PatternButton::paintButton(juce::Graphics& g, bool, bool)
 {
     g.fillAll(juce::Colours::black);
     if (getToggleState())
@@ -505,7 +498,7 @@ bool PatternButton::isInterestedInFileDrag(const juce::StringArray& files)
     return true;
 }
 
-void PatternButton::filesDropped(const juce::StringArray& files, int x, int y)
+void PatternButton::filesDropped(const juce::StringArray& files, int, int)
 {
 	m_editor->drag_onto_pattern(m_pattern, files);
 }
