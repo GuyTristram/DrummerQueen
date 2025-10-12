@@ -12,7 +12,8 @@
 
 namespace
 {
-    const int MAX_LANES = 12;
+const int MAX_LANES = 12;
+const int MAX_DIVISIONS = 16;
 std::vector<DrumInfo> general_midi = {
     {35,        "Acoustic Bass Drum"},
     {36,		"Bass Drum"},
@@ -196,7 +197,7 @@ void DrummerQueenAudioProcessorEditor::resized()
 {
     // This is generally where you'll want to lay out the positions of any
     // subcomponents in your editor..
-	int width = data().total_divisions() * m_note_width;
+	int width = MAX_DIVISIONS * m_note_width;
 	int height = MAX_LANES * m_note_height;
     resize_grid();
 	int grid_bottom = m_grid_top + height;
@@ -253,29 +254,61 @@ void DrummerQueenAudioProcessorEditor::drag_onto_pattern(int pattern_index, cons
     }
 
     std::set<int> notes;
+    std::vector<int> note_on_times;
     auto num_tracks = midi_file.getNumTracks();
+	bool waltz = false;
     for (int i = 0; i < num_tracks; ++i)
     {
         const juce::MidiMessageSequence* track = midi_file.getTrack(i);
         for (int j = 0; j < track->getNumEvents(); ++j)
         {
             auto& e = track->getEventPointer(j)->message;
+			if (e.isMetaEvent() && e.getMetaEventType() == 0x59)
+			{
+                auto data = e.getMetaEventData();
+                if (data[0] == 3) {
+                    waltz = true;
+                }
+			}
             if (e.isNoteOn())
             {
                 int note = e.getNoteNumber();
                 notes.insert(note);
+				note_on_times.push_back((int)e.getTimeStamp());
             }
         }
     }
 
+    //Decide if pattern should be quantized as shuffle
+	float best_error = 1e10f;
+	int best_divisions = 16;
+    for (auto divisions : { 12, 16 }) {
+        float error = 0.f;
+		for (auto t : note_on_times) {
+            float de = divisions * t / float(ticks_per_beat);
+			de = de - std::floor(de);
+			if (de > 0.5f) {
+				de = 1.f - de;
+			}
+			error += de * de;
+        }
+        if (error <= best_error) {
+            best_error = error;
+            best_divisions = divisions;
+        }
+    }
+
     DrumPattern pattern;
+	pattern.time_signature.beats = 4;
+	pattern.time_signature.beat_divisions = best_divisions / 4;
+
     std::map<int, int> lane_from_note;
     for (auto note : notes)
     {
         auto it = std::find_if(general_midi.begin(), general_midi.end(), [note](auto const& d) { return d.note == note; });
         if (it != general_midi.end())
         {
-            pattern.lanes.push_back({ data().total_divisions() });
+            pattern.lanes.push_back({ pattern.time_signature.total_divisions() });
 			pattern.lanes.back().note = note;
 			lane_from_note[note] = (int)pattern.lanes.size() - 1;
         }
@@ -291,8 +324,8 @@ void DrummerQueenAudioProcessorEditor::drag_onto_pattern(int pattern_index, cons
             {
                 int note = e.getNoteNumber();
 				int lane = lane_from_note[note];
-				int division = static_cast<int>(data().beat_divisions() * e.getTimeStamp() / ticks_per_beat);
-				if (division >= 0 && division < data().total_divisions())
+				int division = static_cast<int>(pattern.time_signature.beat_divisions * e.getTimeStamp() / ticks_per_beat);
+				if (division >= 0 && division < pattern.time_signature.total_divisions())
 				{
 					pattern.lanes[lane].velocity[division] = e.getVelocity();
 				}

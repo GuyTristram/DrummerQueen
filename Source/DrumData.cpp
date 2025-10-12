@@ -411,7 +411,7 @@ void DrumData::update_events(int pattern_id)
 	double swing_adjust1 = (0.5 - m_swing) * 2. * beat_from_division;
 	double swing_adjust2 = -swing_adjust1;
 	auto& lanes = pattern.lanes;
-	for (int division = 0; division < total_divisions(); ++division)
+	for (int division = 0; division < pattern.time_signature.total_divisions(); ++division)
 	{
 		for (int lane = 0; lane < lanes.size(); ++lane)
 		{
