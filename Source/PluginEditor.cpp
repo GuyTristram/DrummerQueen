@@ -550,7 +550,7 @@ void PatternButton::paintButton(juce::Graphics& g, bool, bool)
 
 
 
-bool PatternButton::isInterestedInFileDrag(const juce::StringArray& files)
+bool PatternButton::isInterestedInFileDrag(const juce::StringArray&)
 {
     return true;
 }
