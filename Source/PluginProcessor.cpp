@@ -192,6 +192,11 @@ void DrummerQueenAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer,
                 sendChangeMessage();
             }
         }
+        else
+		{
+			m_bar_pos_beats = 0.;
+            sendChangeMessage();
+        }
     }
 }
 

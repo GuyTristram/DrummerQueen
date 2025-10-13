@@ -51,7 +51,15 @@ void DrumGrid::paint(juce::Graphics& g)
 			int v = m_data.get_hit(lane, sub_beat);
             if (v > 0)
             {
-				draw_note(g, lane, sub_beat, v);
+                if (sub_beat < m_position * m_data.beat_divisions() && sub_beat + 1 > m_position * m_data.beat_divisions())
+                {
+                    g.setColour(juce::Colours::white);
+                }
+                else
+                {
+                    g.setColour(juce::Colour(0xffa0a0a0));
+                }
+                draw_note(g, lane, sub_beat, v);
             }
             x += m_note_width;
         }
