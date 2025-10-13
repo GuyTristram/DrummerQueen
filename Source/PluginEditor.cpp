@@ -331,7 +331,7 @@ void DrummerQueenAudioProcessorEditor::drag_onto_pattern(int pattern_index, cons
             pattern.lanes.push_back({ pattern.time_signature.total_divisions() });
 			pattern.lanes.back().note = note;
 			lane_from_note[note] = (int)pattern.lanes.size() - 1;
-        }
+        } // TODO What to do here?
     }
 
     for (int i = 0; i < num_tracks; ++i)
@@ -343,7 +343,7 @@ void DrummerQueenAudioProcessorEditor::drag_onto_pattern(int pattern_index, cons
             if (e.isNoteOn())
             {
                 int note = e.getNoteNumber();
-				int lane = lane_from_note[note];
+				int lane = lane_from_note[note];  // TODO What to do here?
 				int division = static_cast<int>(pattern.time_signature.beat_divisions * e.getTimeStamp() / ticks_per_beat);
 				if (division >= 0 && division < pattern.time_signature.total_divisions())
 				{
