@@ -63,6 +63,26 @@ std::vector<DrumInfo> general_midi = {
     {80,		"Mute Triangle"},
     {81,		"Open Triangle"}
 };
+std::vector<DrumInfo> mt_power = {
+    {36, "Kick"},
+    {38, "Snare"},
+    {37, "Side Stick"},
+    {42, "HH Closed"},
+    {44, "HH Half Open"},
+    {46, "HH Open"},
+    {65, "HH Pedal"},
+    {48, "Tom High"},
+    {45, "Tom Mid"},
+    {41, "Tom Low"},
+    {51, "Ride"},
+    {53, "Bell"},
+    {49, "Crash L"},
+    {57, "Crash R"},
+    {58, "Crash Choked"},
+    {52, "China"},
+    {55, "Splash"}
+};
+
 }
 //==============================================================================
 DrummerQueenAudioProcessorEditor::DrummerQueenAudioProcessorEditor (DrummerQueenAudioProcessor& p)
@@ -300,13 +320,13 @@ void DrummerQueenAudioProcessorEditor::drag_onto_pattern(int pattern_index, cons
 
     DrumPattern pattern;
 	pattern.time_signature.beats = 4;
-	pattern.time_signature.beat_divisions = best_divisions / 4;
+	pattern.time_signature.beat_divisions = best_divisions / pattern.time_signature.beats;
 
     std::map<int, int> lane_from_note;
     for (auto note : notes)
     {
-        auto it = std::find_if(general_midi.begin(), general_midi.end(), [note](auto const& d) { return d.note == note; });
-        if (it != general_midi.end())
+        auto it = std::find_if(mt_power.begin(), mt_power.end(), [note](auto const& d) { return d.note == note; });
+        if (it != mt_power.end())
         {
             pattern.lanes.push_back({ pattern.time_signature.total_divisions() });
 			pattern.lanes.back().note = note;
@@ -366,7 +386,7 @@ void DrummerQueenAudioProcessorEditor::set_pattern(int index)
     int y = 64;
     for (int i = 0; i < data().lane_count(); ++i) {
         m_lane_combo_boxes.push_back(std::make_unique<DrumNoteComboBox>());
-        for (auto const& drum : general_midi) {
+        for (auto const& drum : mt_power) {
             m_lane_combo_boxes.back()->addItem(drum.name, drum.note);
         }
         m_lane_combo_boxes.back()->onChange = [this, i]
@@ -381,9 +401,12 @@ void DrummerQueenAudioProcessorEditor::set_pattern(int index)
         m_lane_name_buttons.push_back(std::make_unique<juce::TextButton>(m_lane_combo_boxes.back()->getText()));
         m_lane_name_buttons.back()->setBounds(8, y, 108, 25);
 		m_lane_name_buttons.back()->setConnectedEdges(juce::Button::ConnectedOnLeft | juce::Button::ConnectedOnRight);
-		m_lane_name_buttons.back()->onClick = [this, i]
+		m_lane_name_buttons.back()->onStateChange = [this, i]
 			{
-                audioProcessor.play_note(data().get_current_pattern().lanes[i].note);;
+				if (m_lane_name_buttons[i]->getState() == juce::Button::buttonDown)
+				{
+                    audioProcessor.play_note(data().get_current_pattern().lanes[i].note);;
+				}
 			};
 		addAndMakeVisible(*m_lane_name_buttons.back());
         y += 24;
@@ -395,7 +418,7 @@ void DrummerQueenAudioProcessorEditor::set_pattern(int index)
 			{
 				if (data().lane_count() < MAX_LANES)
 				{
-					data().add_drum("Drum", general_midi[0].note);
+					data().add_drum("Drum", mt_power[0].note);
 					set_pattern(data().get_current_pattern_id());
 					resize_grid();
 					m_grid.repaint();
