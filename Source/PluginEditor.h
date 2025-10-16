@@ -75,7 +75,7 @@ public:
 
     void delete_lane();
 
-	void drag_onto_pattern(int pattern, const juce::StringArray& files);
+	void drag_onto_pattern(int pattern, const juce::String& files);
 private:
     void drag_midi();
     void sliderValueChanged(juce::Slider* slider) override;

@@ -247,18 +247,10 @@ void DrummerQueenAudioProcessorEditor::delete_lane()
 {
 }
 
-void DrummerQueenAudioProcessorEditor::drag_onto_pattern(int pattern_index, const juce::StringArray& files)
+void DrummerQueenAudioProcessorEditor::drag_onto_pattern(int pattern_index, const juce::String& file)
 {
-    if (files.size() < 1) {
-        return;
-    }
 
-    juce::File f(files[0]);
-    if (!f.existsAsFile()) {
-        return;
-    }
-
-    juce::FileInputStream stream(f);
+   juce::FileInputStream stream(file);
     if (!stream.openedOk()) {
         return;
     }
@@ -486,9 +478,7 @@ void DrummerQueenAudioProcessorEditor::select_time_signature()
 void DrummerQueenAudioProcessorEditor::selectionChanged()
 {
     if (m_file_list.getNumSelectedFiles() > 0) {
-        juce::StringArray files;
-        files.add(m_file_list.getSelectedFile(0).getFullPathName());
-        drag_onto_pattern(data().get_current_pattern_id(), files);
+        drag_onto_pattern(data().get_current_pattern_id(), m_file_list.getSelectedFile(0).getFullPathName());
     }
 }
 
@@ -535,14 +525,7 @@ void DrumNoteComboBox::paint(juce::Graphics& g)
 void PatternButton::paintButton(juce::Graphics& g, bool, bool)
 {
     g.fillAll(juce::Colours::black);
-    if (getToggleState())
-    {
-        g.setColour(juce::Colours::white);
-    }
-    else
-    {
-        g.setColour(juce::Colours::grey);
-    }
+	g.setColour(getToggleState() ? juce::Colours::white : juce::Colours::grey);
 
     char label[2] = { char(m_pattern) + 'A', 0 };
     g.drawText(label, getLocalBounds(), juce::Justification::centred);
@@ -557,5 +540,7 @@ bool PatternButton::isInterestedInFileDrag(const juce::StringArray&)
 
 void PatternButton::filesDropped(const juce::StringArray& files, int, int)
 {
-	m_editor->drag_onto_pattern(m_pattern, files);
+    if (files.size() > 0) {
+        m_editor->drag_onto_pattern(m_pattern, files[0]);
+    }
 }
