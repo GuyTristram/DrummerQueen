@@ -243,6 +243,20 @@ void DrummerQueenAudioProcessorEditor::resized()
     m_drag_button.setBounds(8, grid_bottom + 64, 64, 24);
 }
 
+inline void DrummerQueenAudioProcessorEditor::changeListenerCallback(juce::ChangeBroadcaster*)
+{
+	auto bar_pos_beats = audioProcessor.barPos();
+    m_grid.setPosition(bar_pos_beats);
+    if (data().is_playing_sequence()) {
+        auto index = data().get_sequence_index(bar_pos_beats);
+        auto pattern = data().get_sequence()[index].pattern;
+        if (pattern != data().get_current_pattern_id()) {
+            set_pattern(pattern);
+        }
+    }
+    repaint();
+}
+
 void DrummerQueenAudioProcessorEditor::delete_lane()
 {
 }
@@ -363,7 +377,8 @@ void DrummerQueenAudioProcessorEditor::sliderValueChanged(juce::Slider* slider)
 void DrummerQueenAudioProcessorEditor::set_pattern(int index)
 {
     data().set_current_pattern(index);
-	auto const &pattern = data().get_current_pattern();
+    m_pattern_buttons[index]->setToggleState(true, juce::dontSendNotification);
+    auto const &pattern = data().get_current_pattern();
     for (auto& pb : m_lane_combo_boxes)
     {
         removeChildComponent(pb.get());
@@ -390,7 +405,7 @@ void DrummerQueenAudioProcessorEditor::set_pattern(int index)
         m_lane_combo_boxes.back()->setBounds(8 + 109, y, 24, 25);
         addAndMakeVisible(*m_lane_combo_boxes.back());
         
-        m_lane_name_buttons.push_back(std::make_unique<juce::TextButton>(m_lane_combo_boxes.back()->getText()));
+        m_lane_name_buttons.push_back(std::make_unique<LaneButton>(m_lane_combo_boxes.back()->getText()));
         m_lane_name_buttons.back()->setBounds(8, y, 108, 25);
 		m_lane_name_buttons.back()->setConnectedEdges(juce::Button::ConnectedOnLeft | juce::Button::ConnectedOnRight);
 		m_lane_name_buttons.back()->onStateChange = [this, i]
@@ -543,4 +558,31 @@ void PatternButton::filesDropped(const juce::StringArray& files, int, int)
     if (files.size() > 0) {
         m_editor->drag_onto_pattern(m_pattern, files[0]);
     }
+}
+
+void LaneButton::paintButton(juce::Graphics& g, bool shouldDrawButtonAsHighlighted, bool shouldDrawButtonAsDown)
+{
+    auto& lf = getLookAndFeel();
+
+    lf.drawButtonBackground(g, *this,
+        findColour(getToggleState() ? buttonOnColourId : buttonColourId),
+        shouldDrawButtonAsHighlighted, shouldDrawButtonAsDown);
+    juce::Font font(lf.getTextButtonFont(*this, getHeight()));
+    g.setFont(font);
+    g.setColour(findColour(getToggleState() ? TextButton::textColourOnId
+        : TextButton::textColourOffId)
+        .withMultipliedAlpha(isEnabled() ? 1.0f : 0.5f));
+
+    const int yIndent = std::min(4, proportionOfHeight(0.3f));
+    const int cornerSize = std::min(getHeight(), getWidth()) / 2;
+
+    const int fontHeight = juce::roundToInt(font.getHeight() * 0.6f);
+    const int leftIndent = std::min(fontHeight, 2 + cornerSize / (isConnectedOnLeft() ? 4 : 2));
+    const int rightIndent = std::min(fontHeight, 2 + cornerSize / (isConnectedOnRight() ? 4 : 2));
+    const int textWidth = getWidth() - leftIndent - rightIndent;
+
+    if (textWidth > 0)
+        g.drawFittedText(getButtonText(),
+            leftIndent, yIndent, textWidth, getHeight() - yIndent * 2,
+            juce::Justification::centredLeft, 2);
 }

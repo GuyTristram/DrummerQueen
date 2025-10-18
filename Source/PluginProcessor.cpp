@@ -181,7 +181,8 @@ void DrummerQueenAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer,
             auto beat_pos_begin = pos->getPpqPosition();
             if (beat_pos_begin)
             {
-                m_bar_pos_beats = fmod(*beat_pos_begin, static_cast<double>(m_data.beats()));
+                //m_bar_pos_beats = fmod(*beat_pos_begin, static_cast<double>(m_data.beats()));
+                m_bar_pos_beats = *beat_pos_begin;
                 auto bpm = pos->getBpm();
                 if (bpm)
                 {

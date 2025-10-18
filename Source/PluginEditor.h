@@ -49,6 +49,17 @@ class DrumNoteComboBox : public juce::ComboBox
     void paint(juce::Graphics&) override;
 };
 
+
+
+class LaneButton : public juce::TextButton
+{
+public:
+	LaneButton(const juce::String& name) : TextButton(name) {}
+    void paintButton(juce::Graphics& g,
+        bool	shouldDrawButtonAsHighlighted,
+        bool	shouldDrawButtonAsDown) override;
+};
+
 //==============================================================================
 /**
 */
@@ -67,11 +78,7 @@ public:
     void resize_grid();
     void resized() override;
 
-    void changeListenerCallback(juce::ChangeBroadcaster*) override
-    {
-        m_grid.setPosition(audioProcessor.barPos());
-        repaint();
-    }
+    void changeListenerCallback(juce::ChangeBroadcaster*) override;
 
     void delete_lane();
 
@@ -92,7 +99,7 @@ private:
     std::vector<std::unique_ptr<PatternButton>> m_pattern_buttons;
     juce::TextButton m_add_pattern_button;
 
-    std::vector<std::unique_ptr<juce::TextButton>> m_lane_name_buttons;
+    std::vector<std::unique_ptr<LaneButton>> m_lane_name_buttons;
     std::vector<std::unique_ptr<juce::ComboBox>> m_lane_combo_boxes;
     juce::TextButton m_add_lane_button;
 

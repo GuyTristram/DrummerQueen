@@ -22,7 +22,8 @@ void DrumGrid::paint(juce::Graphics& g)
     g.fillRect(0, 0, total_divisions * m_note_width, m_data.lane_count() * m_lane_height);
 
     // Draw time
-    int x_time = int(m_note_width * m_data.beat_divisions() * m_position);
+	auto wrapped_pos = fmod(m_position, double(m_data.beats()));
+    int x_time = int(m_note_width * m_data.beat_divisions() * wrapped_pos);
     g.setColour({ 200, 200, 0 });
     g.drawVerticalLine(x_time, 0.f, float(m_lane_height * m_data.lane_count()));
 
@@ -51,7 +52,7 @@ void DrumGrid::paint(juce::Graphics& g)
 			int v = m_data.get_hit(lane, sub_beat);
             if (v > 0)
             {
-                if (sub_beat < m_position * m_data.beat_divisions() && sub_beat + 1 > m_position * m_data.beat_divisions())
+                if (sub_beat < wrapped_pos * m_data.beat_divisions() && sub_beat + 1 > wrapped_pos * m_data.beat_divisions())
                 {
                     g.setColour(juce::Colours::white);
                 }

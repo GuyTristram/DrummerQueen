@@ -122,6 +122,35 @@ public:
 		}
 	}
 
+	double get_wrapped_time(double time_beats) const
+	{
+		auto const& sequence = m_play_sequence ? m_sequence : m_current_pattern_sequence;
+		if (sequence.size() == 0) {
+			return 0.;
+		}
+		double sequence_length_beats = sequence.back().end_beat;
+		return fmod(time_beats, sequence_length_beats);
+	}
+
+	int get_sequence_index(double time_beats) const
+	{
+		if (!m_play_sequence) {
+			return 0;
+		}
+		if (m_sequence.size() == 0) {
+			return 0;
+		}
+		double time_wrap = get_wrapped_time(time_beats);
+		for (int seq_index = 0; seq_index < m_sequence.size(); ++seq_index)
+		{
+			if (m_sequence[seq_index].end_beat >= time_wrap)
+			{
+				return seq_index;
+			}
+		}
+		return 0;
+	}
+
 	template <typename MB>
 	void get_events(double start_time, double end_time, int num_samples, MB& midiMessages)
 	{
@@ -133,14 +162,8 @@ public:
 		double start_time_wrap = fmod(start_time, sequence_length_beats);
 		double num_wraps = std::floor(start_time / sequence_length_beats);
 		double end_time_wrap = end_time - start_time + start_time_wrap;
-		int seq_index = 0;
-		for (; seq_index < sequence.size(); ++seq_index)
-		{
-			if (sequence[seq_index].end_beat >= start_time_wrap)
-			{
-				break;
-			}
-		}
+		int seq_index = get_sequence_index(start_time);
+
 		double time = start_time;
 		while (time < end_time)
 		{
