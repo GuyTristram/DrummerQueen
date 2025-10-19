@@ -122,9 +122,14 @@ public:
 		}
 	}
 
+	std::vector<SequenceItem> const& get_playing_sequence() const
+	{
+		return m_play_sequence && !m_sequence.empty() ? m_sequence : m_current_pattern_sequence;
+	}
+
 	double get_wrapped_time(double time_beats) const
 	{
-		auto const& sequence = m_play_sequence ? m_sequence : m_current_pattern_sequence;
+		auto const& sequence = get_playing_sequence();
 		if (sequence.size() == 0) {
 			return 0.;
 		}
@@ -154,7 +159,7 @@ public:
 	template <typename MB>
 	void get_events(double start_time, double end_time, int num_samples, MB& midiMessages)
 	{
-		auto const& sequence = m_play_sequence ? m_sequence : m_current_pattern_sequence;
+		auto const& sequence = get_playing_sequence();
 		if (sequence.size() == 0) {
 			return;
 		}

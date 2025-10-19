@@ -247,9 +247,9 @@ inline void DrummerQueenAudioProcessorEditor::changeListenerCallback(juce::Chang
 {
 	auto bar_pos_beats = audioProcessor.barPos();
     m_grid.setPosition(bar_pos_beats);
-    if (data().is_playing_sequence()) {
+    if (bar_pos_beats > 0.f && data().is_playing_sequence()) {
         auto index = data().get_sequence_index(bar_pos_beats);
-        auto pattern = data().get_sequence()[index].pattern;
+        auto pattern = data().get_playing_sequence()[index].pattern;
         if (pattern != data().get_current_pattern_id()) {
             set_pattern(pattern);
         }
@@ -280,22 +280,14 @@ void DrummerQueenAudioProcessorEditor::drag_onto_pattern(int pattern_index, cons
     }
 
     std::set<int> notes;
-    std::vector<int> note_on_times;
+    std::vector<double> note_on_times;
     auto num_tracks = midi_file.getNumTracks();
-	bool waltz = false;
     for (int i = 0; i < num_tracks; ++i)
     {
         const juce::MidiMessageSequence* track = midi_file.getTrack(i);
         for (int j = 0; j < track->getNumEvents(); ++j)
         {
             auto& e = track->getEventPointer(j)->message;
-			if (e.isMetaEvent() && e.getMetaEventType() == 0x59)
-			{
-                auto data = e.getMetaEventData();
-                if (data[0] == 3) {
-                    waltz = true;
-                }
-			}
             if (e.isNoteOn())
             {
                 int note = e.getNoteNumber();
@@ -305,13 +297,18 @@ void DrummerQueenAudioProcessorEditor::drag_onto_pattern(int pattern_index, cons
         }
     }
 
+	double max_time = 0.;
+    for (auto t : note_on_times) {
+        max_time = std::max(max_time, t);
+    }
+
     //Decide if pattern should be quantized as shuffle
-	float best_error = 1e10f;
+	double best_error = 1e10f;
 	int best_divisions = 16;
     for (auto divisions : { 12, 16 }) {
-        float error = 0.f;
+        double error = 0.f;
 		for (auto t : note_on_times) {
-            float de = divisions * t / float(ticks_per_beat);
+            double de = divisions * t / float(ticks_per_beat);
 			de = de - std::floor(de);
 			if (de > 0.5f) {
 				de = 1.f - de;
@@ -374,10 +371,12 @@ void DrummerQueenAudioProcessorEditor::sliderValueChanged(juce::Slider* slider)
 	}
 }
 
-void DrummerQueenAudioProcessorEditor::set_pattern(int index)
+void DrummerQueenAudioProcessorEditor::set_pattern(int index, bool update_button)
 {
     data().set_current_pattern(index);
-    m_pattern_buttons[index]->setToggleState(true, juce::dontSendNotification);
+    if (update_button) {
+        m_pattern_buttons[index]->setToggleState(true, juce::dontSendNotification);
+    }
     auto const &pattern = data().get_current_pattern();
     for (auto& pb : m_lane_combo_boxes)
     {
@@ -426,7 +425,7 @@ void DrummerQueenAudioProcessorEditor::set_pattern(int index)
 				if (data().lane_count() < MAX_LANES)
 				{
 					data().add_drum("Drum", mt_power[0].note);
-					set_pattern(data().get_current_pattern_id());
+					set_pattern(data().get_current_pattern_id(), false);
 					resize_grid();
 					m_grid.repaint();
 				}
@@ -453,7 +452,7 @@ void DrummerQueenAudioProcessorEditor::update_pattern_buttons()
     for (int i = 0; i < n_patterns; ++i)
     {
         m_pattern_buttons.emplace_back(std::make_unique<PatternButton>(this, i));
-        m_pattern_buttons.back()->onClick = [this, i] {set_pattern(i);};
+        m_pattern_buttons.back()->onClick = [this, i] {set_pattern(i, false);};
 		m_pattern_buttons.back()->setRadioGroupId(2);
         m_pattern_button_parent.addAndMakeVisible(m_pattern_buttons.back().get());
     }

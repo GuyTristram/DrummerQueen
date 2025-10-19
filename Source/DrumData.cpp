@@ -320,6 +320,8 @@ std::string DrumData::to_json() const
 	j["midi_file_directory"] = m_midi_file_directory;
 	j["swing"] = m_swing;
 	j["patterns"] = json::array();
+	j["playing_sequence"] = m_play_sequence;
+	j["current_pattern"] = m_current_pattern;
 	for (auto& pattern : m_patterns)
 	{
 		json p;
@@ -363,6 +365,8 @@ void DrumData::from_json(std::string const& json_string)
 			kit.drums.emplace_back(d["note"], d["name"]);
 		}
 	}
+	m_play_sequence = j.value("play_sequence", false);
+	m_current_pattern = j.value("current_pattern", 0);
 	m_patterns.clear();
 	int pattern_count = 0;
 	for (auto& p : j["patterns"])

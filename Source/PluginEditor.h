@@ -86,7 +86,7 @@ public:
 private:
     void drag_midi();
     void sliderValueChanged(juce::Slider* slider) override;
-    void set_pattern(int i);
+    void set_pattern(int i, bool update_button = true);
     void update_pattern_buttons();
 	DrumData& data() { return audioProcessor.m_data; }
     // This reference is provided as a quick way for your editor to
