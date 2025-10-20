@@ -304,11 +304,11 @@ void DrummerQueenAudioProcessorEditor::drag_onto_pattern(int pattern_index, cons
 
     //Decide if pattern should be quantized as shuffle
 	double best_error = 1e10f;
-	int best_divisions = 16;
-    for (auto divisions : { 12, 16 }) {
+	int best_divisions = 4;
+    for (auto divisions : { 3, 4 }) {
         double error = 0.f;
 		for (auto t : note_on_times) {
-            double de = divisions * t / float(ticks_per_beat);
+            double de = divisions * t / double(ticks_per_beat);
 			de = de - std::floor(de);
 			if (de > 0.5f) {
 				de = 1.f - de;
@@ -323,7 +323,7 @@ void DrummerQueenAudioProcessorEditor::drag_onto_pattern(int pattern_index, cons
 
     DrumPattern pattern;
 	pattern.time_signature.beats = 4;
-	pattern.time_signature.beat_divisions = best_divisions / pattern.time_signature.beats;
+	pattern.time_signature.beat_divisions = best_divisions;
 
     std::map<int, int> lane_from_note;
     for (auto note : notes)
