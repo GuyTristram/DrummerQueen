@@ -261,106 +261,102 @@ void DrummerQueenAudioProcessorEditor::delete_lane()
 {
 }
 
+namespace {
+	DrumPattern import_midi_file(const juce::String& file)
+	{
+		DrumPattern pattern;
+
+
+        juce::MidiFile midi_file;
+        juce::FileInputStream stream(file);
+        if (!stream.openedOk() || !midi_file.readFrom(stream) || midi_file.getTimeFormat() <= 0) {
+            return pattern;
+        }
+
+        auto ticks_per_beat = midi_file.getTimeFormat();
+
+        std::set<int> notes;
+        std::vector<double> note_on_times;
+        auto num_tracks = midi_file.getNumTracks();
+        for (int i = 0; i < num_tracks; ++i)
+        {
+            const juce::MidiMessageSequence* track = midi_file.getTrack(i);
+            for (int j = 0; j < track->getNumEvents(); ++j)
+            {
+                auto& e = track->getEventPointer(j)->message;
+                if (e.isNoteOn())
+                {
+                    int note = e.getNoteNumber();
+                    notes.insert(note);
+                    note_on_times.push_back((int)e.getTimeStamp());
+                }
+            }
+        }
+
+        double max_time = 0.;
+        for (auto t : note_on_times) {
+            max_time = std::max(max_time, t);
+        }
+
+        //Decide if pattern should be quantized as shuffle
+        double best_error = 1e10f;
+        int best_divisions = 4;
+        for (auto divisions : { 3, 4 }) {
+            double error = 0.f;
+            for (auto t : note_on_times) {
+                double de = divisions * t / double(ticks_per_beat);
+                de = de - std::round(de);
+                error += de * de;
+            }
+            if (error <= best_error) {
+                best_error = error;
+                best_divisions = divisions;
+            }
+        }
+
+        pattern.time_signature.beats = 4;
+        pattern.time_signature.beat_divisions = best_divisions;
+
+        std::map<int, int> lane_from_note;
+        for (auto note : notes)
+        {
+            auto it = std::find_if(mt_power.begin(), mt_power.end(), [note](auto const& d) { return d.note == note; });
+            if (it != mt_power.end())
+            {
+                pattern.lanes.push_back({ pattern.time_signature.total_divisions() });
+                pattern.lanes.back().note = note;
+                lane_from_note[note] = (int)pattern.lanes.size() - 1;
+            } // TODO What to do here?
+        }
+
+        for (int i = 0; i < num_tracks; ++i)
+        {
+            const juce::MidiMessageSequence* track = midi_file.getTrack(i);
+            for (int j = 0; j < track->getNumEvents(); ++j)
+            {
+                auto& e = track->getEventPointer(j)->message;
+                if (e.isNoteOn())
+                {
+                    int note = e.getNoteNumber();
+                    int lane = lane_from_note[note];  // TODO What to do here?
+                    int division = static_cast<int>(pattern.time_signature.beat_divisions * e.getTimeStamp() / ticks_per_beat);
+                    if (division >= 0 && division < pattern.time_signature.total_divisions())
+                    {
+                        pattern.lanes[lane].velocity[division] = e.getVelocity();
+                    }
+                }
+            }
+        }
+        return pattern;
+	}
+}
+
+
 void DrummerQueenAudioProcessorEditor::drag_onto_pattern(int pattern_index, const juce::String& file)
 {
-
-   juce::FileInputStream stream(file);
-    if (!stream.openedOk()) {
-        return;
-    }
-
-    juce::MidiFile midi_file;
-    if (!midi_file.readFrom(stream)) {
-        return;
-    }
-
-    auto ticks_per_beat = midi_file.getTimeFormat();
-    if (ticks_per_beat <= 0) {
-        return;
-    }
-
-    std::set<int> notes;
-    std::vector<double> note_on_times;
-    auto num_tracks = midi_file.getNumTracks();
-    for (int i = 0; i < num_tracks; ++i)
-    {
-        const juce::MidiMessageSequence* track = midi_file.getTrack(i);
-        for (int j = 0; j < track->getNumEvents(); ++j)
-        {
-            auto& e = track->getEventPointer(j)->message;
-            if (e.isNoteOn())
-            {
-                int note = e.getNoteNumber();
-                notes.insert(note);
-				note_on_times.push_back((int)e.getTimeStamp());
-            }
-        }
-    }
-
-	double max_time = 0.;
-    for (auto t : note_on_times) {
-        max_time = std::max(max_time, t);
-    }
-
-    //Decide if pattern should be quantized as shuffle
-	double best_error = 1e10f;
-	int best_divisions = 4;
-    for (auto divisions : { 3, 4 }) {
-        double error = 0.f;
-		for (auto t : note_on_times) {
-            double de = divisions * t / double(ticks_per_beat);
-			de = de - std::floor(de);
-			if (de > 0.5f) {
-				de = 1.f - de;
-			}
-			error += de * de;
-        }
-        if (error <= best_error) {
-            best_error = error;
-            best_divisions = divisions;
-        }
-    }
-
-    DrumPattern pattern;
-	pattern.time_signature.beats = 4;
-	pattern.time_signature.beat_divisions = best_divisions;
-
-    std::map<int, int> lane_from_note;
-    for (auto note : notes)
-    {
-        auto it = std::find_if(mt_power.begin(), mt_power.end(), [note](auto const& d) { return d.note == note; });
-        if (it != mt_power.end())
-        {
-            pattern.lanes.push_back({ pattern.time_signature.total_divisions() });
-			pattern.lanes.back().note = note;
-			lane_from_note[note] = (int)pattern.lanes.size() - 1;
-        } // TODO What to do here?
-    }
-
-    for (int i = 0; i < num_tracks; ++i)
-    {
-        const juce::MidiMessageSequence* track = midi_file.getTrack(i);
-        for (int j = 0; j < track->getNumEvents(); ++j)
-        {
-            auto& e = track->getEventPointer(j)->message;
-            if (e.isNoteOn())
-            {
-                int note = e.getNoteNumber();
-				int lane = lane_from_note[note];  // TODO What to do here?
-				int division = static_cast<int>(pattern.time_signature.beat_divisions * e.getTimeStamp() / ticks_per_beat);
-				if (division >= 0 && division < pattern.time_signature.total_divisions())
-				{
-					pattern.lanes[lane].velocity[division] = e.getVelocity();
-				}
-            }
-        }
-    }
-
-	data().set_pattern(pattern_index, pattern);
+	data().set_pattern(pattern_index, import_midi_file(file));
 	set_pattern(pattern_index);
     m_pattern_buttons[pattern_index]->setToggleState(true, juce::dontSendNotification);
-
-
 	m_grid.repaint();
 }
 
