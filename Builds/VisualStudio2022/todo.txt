@@ -3,4 +3,4 @@ All data affecting actions support undo/redo
 Time signature per pattern
 Save/load kits
 
-Fix the bug where the first note is played from the last pattern
+Grid editting - right click delete & paint with mouse down

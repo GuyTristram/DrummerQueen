@@ -14,7 +14,7 @@
 namespace
 {
 const int MAX_LANES = 12;
-const int MAX_DIVISIONS = 16;
+const int MAX_DIVISIONS = 32;
 std::vector<DrumInfo> general_midi = { {35, "Acoustic Bass Drum"}, {36, "Bass Drum"}, {37, "Side Stick"}, {38, "Acoustic Snare"}, {39, "Hand Clap"},
   {40, "Electric Snare"}, {41, "Low Floor Tom"}, {42, "Closed Hi Hat"}, {43, "High Floor Tom"}, {44, "Pedal Hi - Hat"}, {45, "Low Tom"},
   {46, "Open Hi - Hat"}, {47, "Low - Mid Tom"}, {48, "Hi - Mid Tom"}, {49, "Crash Cymbal 1"}, {50, "High Tom"}, {51, "Ride Cymbal 1"},
@@ -90,6 +90,7 @@ DrummerQueenAudioProcessorEditor::DrummerQueenAudioProcessorEditor (DrummerQueen
 			m_sequence_length_label.setText(std::format("Len: {}", data().sequence_length()), juce::dontSendNotification);
         };
 	addAndMakeVisible(m_play_sequence_button);
+    m_play_sequence_button.setToggleState(data().is_playing_sequence(), false);
 	m_play_sequence_button.onClick = [this] {data().play_sequence(m_play_sequence_button.getToggleState()); };
     addAndMakeVisible(m_sequence_length_label);
 
@@ -115,7 +116,10 @@ DrummerQueenAudioProcessorEditor::DrummerQueenAudioProcessorEditor (DrummerQueen
     add_time_signature("4/4", 4, 4);
     add_time_signature("3/4", 3, 4);
     add_time_signature("4/3", 4, 3);
-	select_time_signature();
+    add_time_signature("4/4 * 2", 8, 4);
+    add_time_signature("3/4 * 2", 6, 4);
+    add_time_signature("4/3 * 2", 8, 3);
+    select_time_signature();
     m_time_signature_box.onChange = [this]
     {
         int i = m_time_signature_box.getSelectedId() - 1;
@@ -152,7 +156,7 @@ DrummerQueenAudioProcessorEditor::DrummerQueenAudioProcessorEditor (DrummerQueen
 	m_file_list.setRoot(juce::File(data().m_midi_file_directory));
 	m_file_list.addListener(this);
 
-    setSize(770, 448);
+    setSize(1200, 448);
     audioProcessor.addChangeListener(this);
 
 }
@@ -288,7 +292,7 @@ namespace {
             }
         }
 
-        pattern.time_signature.beats = 4;
+        pattern.time_signature.beats = max_time / ticks_per_beat > 4 ? 8 : 4;
         pattern.time_signature.beat_divisions = best_divisions;
 
         std::map<int, int> lane_from_note;
@@ -324,6 +328,10 @@ namespace {
 
 void DrummerQueenAudioProcessorEditor::drag_onto_pattern(int pattern_index, const juce::String& file)
 {
+	juce::File f(file);
+	if (!f.existsAsFile()) {
+		return;
+	}
 	data().set_pattern(pattern_index, import_midi_file(file));
 	set_pattern(pattern_index);
     m_pattern_buttons[pattern_index]->setToggleState(true, juce::dontSendNotification);
@@ -395,6 +403,7 @@ void DrummerQueenAudioProcessorEditor::set_pattern(int index, bool update_button
 					set_pattern(data().get_current_pattern_id(), false);
 					resize_grid();
 					m_grid.repaint();
+                    m_lane_combo_boxes.back()->showPopup();
 				}
 			};
 		addAndMakeVisible(m_add_lane_button);
@@ -405,6 +414,7 @@ void DrummerQueenAudioProcessorEditor::set_pattern(int index, bool update_button
 	}
     resize_grid();
     m_grid.repaint();
+    select_time_signature();
 }
 
 void DrummerQueenAudioProcessorEditor::update_pattern_buttons()
