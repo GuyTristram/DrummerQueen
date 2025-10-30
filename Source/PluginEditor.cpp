@@ -15,35 +15,6 @@ namespace
 {
 const int MAX_LANES = 12;
 const int MAX_DIVISIONS = 32;
-std::vector<DrumInfo> general_midi = { {35, "Acoustic Bass Drum"}, {36, "Bass Drum"}, {37, "Side Stick"}, {38, "Acoustic Snare"}, {39, "Hand Clap"},
-  {40, "Electric Snare"}, {41, "Low Floor Tom"}, {42, "Closed Hi Hat"}, {43, "High Floor Tom"}, {44, "Pedal Hi - Hat"}, {45, "Low Tom"},
-  {46, "Open Hi - Hat"}, {47, "Low - Mid Tom"}, {48, "Hi - Mid Tom"}, {49, "Crash Cymbal 1"}, {50, "High Tom"}, {51, "Ride Cymbal 1"},
-  {52, "Chinese Cymbal"}, {53, "Ride Bell"}, {54, "Tambourine"}, {55, "Splash Cymbal"}, {56, "Cowbell"}, {57, "Crash Cymbal 2"}, {58, "Vibraslap"},
-  {59, "Ride Cymbal 2"}, {60, "Hi Bongo"}, {61, "Low Bongo"}, {62, "Mute Hi Conga"}, {63, "Open Hi Conga"}, {64, "Low Conga"}, {65, "Hi Timbale"},
-  {66, "Low Timbale"}, {67, "Hi Agogo"}, {68, "Low Agogo"}, {69, "Cabasa"}, {70, "Maracas"}, {71, "Short Whistle"}, {72, "Long Whistle"},
-  {73, "Short Guiro"}, {74, "Long Guiro"}, {75, "Claves"}, {76, "Hi Wood Block"}, {77, "Low Wood Block"}, {78, "Mute Cuica"}, {79, "Open Cuica"},
-  {80, "Mute Triangle"}, {81, "Open Triangle"}
-};
-std::vector<DrumInfo> mt_power = {
-    {36, "Kick"},
-    {38, "Snare"},
-    {37, "Side Stick"},
-    {42, "HH Closed"},
-    {44, "HH Half Open"},
-    {46, "HH Open"},
-    {65, "HH Pedal"},
-    {48, "Tom High"},
-    {45, "Tom Mid"},
-    {41, "Tom Low"},
-    {51, "Ride"},
-    {53, "Bell"},
-    {49, "Crash L"},
-    {57, "Crash R"},
-    {58, "Crash Choked"},
-    {52, "China"},
-    {55, "Splash"}
-};
-
 }
 //==============================================================================
 DrummerQueenAudioProcessorEditor::DrummerQueenAudioProcessorEditor (DrummerQueenAudioProcessor& p)
@@ -171,15 +142,6 @@ void DrummerQueenAudioProcessorEditor::paint (juce::Graphics& g)
 {
     // (Our component is opaque, so we must completely fill the background with a solid colour)
     g.fillAll (getLookAndFeel().findColour (juce::ResizableWindow::backgroundColourId));
-
-    g.setColour(juce::Colours::white);
-    g.setFont(juce::FontOptions(15.0f));
-
-    //g.drawFittedText(std::format("Beat {}", audioProcessor.barPos()), getLocalBounds(), juce::Justification::topLeft, 1);
-	for (int i = 0; i < data().lane_count(); ++i)
-	{
-        //g.drawFittedText(data().get_lane_name(i), {8, 64 + i * 24, 80, 24}, juce::Justification::centredLeft, 1);
-	}
 }
 
 void DrummerQueenAudioProcessorEditor::resize_grid()
@@ -399,7 +361,7 @@ void DrummerQueenAudioProcessorEditor::set_pattern(int index, bool update_button
 			{
 				if (data().lane_count() < MAX_LANES)
 				{
-					data().add_drum("Drum", mt_power[0].note);
+					data().add_drum("Drum", 36);
 					set_pattern(data().get_current_pattern_id(), false);
 					resize_grid();
 					m_grid.repaint();
