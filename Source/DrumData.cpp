@@ -519,48 +519,6 @@ void DrumData::redo()
 	m_undo_stack.push_back(action);
 }
 
-std::ostream& operator<<(std::ostream& out, const DrumData& data)
-{
-	auto& lanes = data.m_patterns[0].lanes;
-
-	out << lanes.size() << "\n";
-	for (int i = 0; i < lanes.size(); ++i)
-	{
-		for (auto v : lanes[i].velocity)
-		{
-			out << v << " ";
-		}
-		out << "\n";
-	}
-	return out;
-}
-
-std::istream& operator>>(std::istream& in, DrumData& data)
-{
-	std::ofstream debug("c:/Temp/load_drum.txt");
-	int lane_count;
-	in >> lane_count;
-	auto& lanes = data.m_patterns[0].lanes;
-	lanes.clear();
-	for (int i = 0; i < lane_count; ++i)
-	{
-		std::string name;
-		int note;
-		in >> std::ws;
-		std::getline(in, name);
-		in >> note;
-		data.add_drum(name, note);
-		debug << "name " << name << " note" << note << "\n";
-		for (auto& v : lanes.back().velocity)
-		{
-			in >> v;
-		}
-	}
-	data.update_events(0);
-	return in;
-}
-
-
 void DrumData::load_kits()
 {
 	DrumKit fallback;

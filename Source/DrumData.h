@@ -189,9 +189,6 @@ public:
 	std::string to_json() const;
 	void from_json(std::string const& json);
 
-	friend std::ostream& operator<<(std::ostream& out, const DrumData& data);
-	friend std::istream& operator>>(std::istream& in, DrumData& data);
-
 	void undo();
 	void redo();
 
