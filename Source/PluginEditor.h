@@ -119,6 +119,9 @@ private:
 	void add_time_signature(char const *name, int beats, int beat_divisions);
 	void select_time_signature();
 
+    juce::ComboBox m_drum_kit_box;
+
+
     DragButton m_drag_button;
 
     juce::WildcardFileFilter m_midi_file_filter;
@@ -133,7 +136,6 @@ private:
     void fileClicked(const juce::File&, const juce::MouseEvent&) override {};
     void fileDoubleClicked(const juce::File &) override {}
     void browserRootChanged(const juce::File & newRoot) override;
-
 
     int m_grid_top = 64;
     int m_grid_left = 140;

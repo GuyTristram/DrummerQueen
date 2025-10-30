@@ -74,6 +74,7 @@ public:
 		: m_listener(listener), m_patterns(1),
 		m_midi_file_directory(juce::File::getSpecialLocation(juce::File::userDocumentsDirectory).getFullPathName().toStdString())
     {
+		load_kits();
 		m_current_pattern_sequence.push_back({ 0.f, 4.f, 0 });
 	}
 
@@ -196,6 +197,12 @@ public:
 
 	std::string m_midi_file_directory;
 
+	int get_current_kit() const { return m_current_kit; }
+	void set_current_kit(int kit_index) { m_current_kit = kit_index; }
+	std::vector<std::string> get_kit_names() const;
+	std::vector<DrumInfo> const &get_current_kit_drums() const;
+	std::string get_drum_name(int note) const;
+
 private:
 	void update_events();
 	void update_events(int pattern);
@@ -217,4 +224,9 @@ private:
 	std::vector<Action> m_redo_stack;
 
 	void do_action(std::function<void()> do_action, std::function<void()> undo_action);
+
+	std::vector<DrumKit> m_kits;
+	int m_current_kit = 0;
+	void load_kits();
+
 };

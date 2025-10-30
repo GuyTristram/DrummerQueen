@@ -270,6 +270,41 @@ int DrumData::lane_count() const
 	return (int)m_patterns[m_current_pattern].lanes.size();
 }
 
+std::vector<std::string> DrumData::get_kit_names() const
+{
+	std::vector<std::string> kit_names;
+	for (auto& kit : m_kits)
+	{
+		kit_names.push_back(kit.name);
+	}
+	return kit_names;
+}
+
+std::vector<DrumInfo> const &DrumData::get_current_kit_drums() const
+{
+	return m_kits[m_current_kit].drums;
+}
+
+std::string DrumData::get_drum_name(int note) const
+{
+	for (int i = 0; i < m_kits[m_current_kit].drums.size(); ++i)
+	{
+		if (m_kits[m_current_kit].drums[i].note == note)
+		{
+			return m_kits[m_current_kit].drums[i].name;
+		}
+	}
+
+	for (int i = 0; i < m_kits[0].drums.size(); ++i)
+	{
+		if (m_kits[0].drums[i].note == note)
+		{
+			return m_kits[0].drums[i].name + "*";
+		}
+	}
+	return std::string();
+}
+
 void DrumData::update_events()
 {
 	for (int i = 0; i < m_patterns.size(); ++i)
@@ -322,6 +357,7 @@ std::string DrumData::to_json() const
 	j["patterns"] = json::array();
 	j["play_sequence"] = m_play_sequence;
 	j["current_pattern"] = m_current_pattern;
+	j["current_kit"] = m_kits[m_current_kit].name;
 	for (auto& pattern : m_patterns)
 	{
 		json p;
@@ -364,6 +400,15 @@ void DrumData::from_json(std::string const& json_string)
 		for (auto& d : j["kit"]["drums"])
 		{
 			kit.drums.emplace_back(d["note"], d["name"]);
+		}
+	}
+	auto current_kit_name = j.value("current_kit", "General MIDI");
+	for (int i = 0; i < m_kits.size(); ++i)
+	{
+		if (m_kits[i].name == current_kit_name)
+		{
+			m_current_kit = 0;
+			break;
 		}
 	}
 	m_play_sequence = j.value("play_sequence", false);
@@ -513,4 +558,43 @@ std::istream& operator>>(std::istream& in, DrumData& data)
 	}
 	data.update_events(0);
 	return in;
+}
+
+
+void DrumData::load_kits()
+{
+	DrumKit fallback;
+	fallback.name = "General MIDI";
+	fallback.drums = std::vector<DrumInfo>{ {35, "Acoustic Bass Drum"}, {36, "Bass Drum"}, {37, "Side Stick"}, {38, "Acoustic Snare"}, {39, "Hand Clap"},
+	  {40, "Electric Snare"}, {41, "Low Floor Tom"}, {42, "Closed Hi Hat"}, {43, "High Floor Tom"}, {44, "Pedal Hi - Hat"}, {45, "Low Tom"},
+	  {46, "Open Hi - Hat"}, {47, "Low - Mid Tom"}, {48, "Hi - Mid Tom"}, {49, "Crash Cymbal 1"}, {50, "High Tom"}, {51, "Ride Cymbal 1"},
+	  {52, "Chinese Cymbal"}, {53, "Ride Bell"}, {54, "Tambourine"}, {55, "Splash Cymbal"}, {56, "Cowbell"}, {57, "Crash Cymbal 2"}, {58, "Vibraslap"},
+	  {59, "Ride Cymbal 2"}, {60, "Hi Bongo"}, {61, "Low Bongo"}, {62, "Mute Hi Conga"}, {63, "Open Hi Conga"}, {64, "Low Conga"}, {65, "Hi Timbale"},
+	  {66, "Low Timbale"}, {67, "Hi Agogo"}, {68, "Low Agogo"}, {69, "Cabasa"}, {70, "Maracas"}, {71, "Short Whistle"}, {72, "Long Whistle"},
+	  {73, "Short Guiro"}, {74, "Long Guiro"}, {75, "Claves"}, {76, "Hi Wood Block"}, {77, "Low Wood Block"}, {78, "Mute Cuica"}, {79, "Open Cuica"},
+	  {80, "Mute Triangle"}, {81, "Open Triangle"} };
+
+	m_kits.push_back(fallback);
+
+	juce::File appDirectory = juce::File::getSpecialLocation(juce::File::currentApplicationFile);
+	appDirectory = appDirectory.getParentDirectory();
+	juce::File kitFile = appDirectory.getChildFile("DrumKits.json");
+
+	std::ifstream in(kitFile.getFullPathName().getCharPointer());
+	if (!in.is_open()) {
+		return;
+	}
+	nlohmann::json j;
+	in >> j;
+	for (auto& k : j)
+	{
+		DrumKit kit;
+		kit.name = k["name"];
+		for (auto& d : k["drums"])
+		{
+			kit.drums.emplace_back(d["note"], d["name"]);
+		}
+		m_kits.push_back(kit);
+	}
+
 }

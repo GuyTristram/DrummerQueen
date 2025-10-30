@@ -9,59 +9,20 @@
 #include "PluginProcessor.h"
 #include "PluginEditor.h"
 #include <format>
+#include "json.hpp"
 
 namespace
 {
 const int MAX_LANES = 12;
 const int MAX_DIVISIONS = 16;
-std::vector<DrumInfo> general_midi = {
-    {35,        "Acoustic Bass Drum"},
-    {36,		"Bass Drum"},
-    {37,		"Side Stick"},
-    {38,		"Acoustic Snare"},
-    {39,		"Hand Clap"},
-    {40,		"Electric Snare"},
-    {41,		"Low Floor Tom"},
-    {42,		"Closed Hi Hat"},
-    {43,		"High Floor Tom"},
-    {44,		"Pedal Hi - Hat"},
-    {45,		"Low Tom"},
-    {46,		"Open Hi - Hat"},
-    {47,		"Low - Mid Tom"},
-    {48,		"Hi - Mid Tom"},
-    {49,		"Crash Cymbal 1"},
-    {50,		"High Tom"},
-    {51,		"Ride Cymbal 1"},
-    {52,		"Chinese Cymbal"},
-    {53,		"Ride Bell"},
-    {54,		"Tambourine"},
-    {55,		"Splash Cymbal"},
-    {56,		"Cowbell"},
-    {57,		"Crash Cymbal 2"},
-    {58,		"Vibraslap"},
-    {59,		"Ride Cymbal 2"},
-    {60,		"Hi Bongo"},
-    {61,		"Low Bongo"},
-    {62,		"Mute Hi Conga"},
-    {63,		"Open Hi Conga"},
-    {64,        "Low Conga"},
-    {65,		"Hi Timbale"},
-    {66,		"Low Timbale"},
-    {67,		"Hi Agogo"},
-    {68,		"Low Agogo"},
-    {69,		"Cabasa"},
-    {70,		"Maracas"},
-    {71,		"Short Whistle"},
-    {72,		"Long Whistle"},
-    {73,		"Short Guiro"},
-    {74,		"Long Guiro"},
-    {75,		"Claves"},
-    {76,		"Hi Wood Block"},
-    {77,		"Low Wood Block"},
-    {78,		"Mute Cuica"},
-    {79,		"Open Cuica"},
-    {80,		"Mute Triangle"},
-    {81,		"Open Triangle"}
+std::vector<DrumInfo> general_midi = { {35, "Acoustic Bass Drum"}, {36, "Bass Drum"}, {37, "Side Stick"}, {38, "Acoustic Snare"}, {39, "Hand Clap"},
+  {40, "Electric Snare"}, {41, "Low Floor Tom"}, {42, "Closed Hi Hat"}, {43, "High Floor Tom"}, {44, "Pedal Hi - Hat"}, {45, "Low Tom"},
+  {46, "Open Hi - Hat"}, {47, "Low - Mid Tom"}, {48, "Hi - Mid Tom"}, {49, "Crash Cymbal 1"}, {50, "High Tom"}, {51, "Ride Cymbal 1"},
+  {52, "Chinese Cymbal"}, {53, "Ride Bell"}, {54, "Tambourine"}, {55, "Splash Cymbal"}, {56, "Cowbell"}, {57, "Crash Cymbal 2"}, {58, "Vibraslap"},
+  {59, "Ride Cymbal 2"}, {60, "Hi Bongo"}, {61, "Low Bongo"}, {62, "Mute Hi Conga"}, {63, "Open Hi Conga"}, {64, "Low Conga"}, {65, "Hi Timbale"},
+  {66, "Low Timbale"}, {67, "Hi Agogo"}, {68, "Low Agogo"}, {69, "Cabasa"}, {70, "Maracas"}, {71, "Short Whistle"}, {72, "Long Whistle"},
+  {73, "Short Guiro"}, {74, "Long Guiro"}, {75, "Claves"}, {76, "Hi Wood Block"}, {77, "Low Wood Block"}, {78, "Mute Cuica"}, {79, "Open Cuica"},
+  {80, "Mute Triangle"}, {81, "Open Triangle"}
 };
 std::vector<DrumInfo> mt_power = {
     {36, "Kick"},
@@ -95,9 +56,6 @@ DrummerQueenAudioProcessorEditor::DrummerQueenAudioProcessorEditor (DrummerQueen
     */
 	m_file_list(juce::FileBrowserComponent::canSelectFiles | juce::FileBrowserComponent::openMode, juce::File(), &m_midi_file_filter, nullptr)
 {
-
-
-
     // Make sure that before the constructor has finished, you've set the
     // editor's size to whatever you need it to be.
     addAndMakeVisible(m_grid);
@@ -166,7 +124,21 @@ DrummerQueenAudioProcessorEditor::DrummerQueenAudioProcessorEditor (DrummerQueen
         m_grid.repaint();
     };
     addAndMakeVisible(m_time_signature_box);
- 
+
+	auto kit_names = data().get_kit_names();
+	for (int i = 0; i < kit_names.size(); ++i)
+	{
+		m_drum_kit_box.addItem(kit_names[i], i + 1);
+	}
+	m_drum_kit_box.onChange = [this] {
+        int kit_index = m_drum_kit_box.getSelectedId() - 1;
+	    data().set_current_kit(kit_index);
+		set_pattern(data().get_current_pattern_id(), false);
+	};
+
+    addAndMakeVisible(m_drum_kit_box);
+
+
     m_drag_button.setButtonText("Drag");
 	m_drag_button.onStartDrag = [this] { drag_midi(); };
     addAndMakeVisible(m_drag_button);
@@ -235,6 +207,7 @@ void DrummerQueenAudioProcessorEditor::resized()
     x += 80;
     m_time_signature_box.setBounds(x, 32, 64, 24);
     m_swing_slider.setBounds(m_grid_left, 8, 200, 24);
+	m_drum_kit_box.setBounds(m_grid_left + 220, 8, 150, 24);
 
 	m_play_sequence_button.setBounds(8, grid_bottom + 36, 24, 24);
     m_sequence_editor.setBounds(m_grid_left, grid_bottom + 36, width-80, 24);
@@ -320,13 +293,9 @@ namespace {
         std::map<int, int> lane_from_note;
         for (auto note : notes)
         {
-            auto it = std::find_if(mt_power.begin(), mt_power.end(), [note](auto const& d) { return d.note == note; });
-            if (it != mt_power.end())
-            {
-                pattern.lanes.push_back({ pattern.time_signature.total_divisions() });
-                pattern.lanes.back().note = note;
-                lane_from_note[note] = (int)pattern.lanes.size() - 1;
-            } // TODO What to do here?
+            pattern.lanes.push_back({ pattern.time_signature.total_divisions() });
+            pattern.lanes.back().note = note;
+            lane_from_note[note] = (int)pattern.lanes.size() - 1;
         }
 
         for (int i = 0; i < num_tracks; ++i)
@@ -338,7 +307,7 @@ namespace {
                 if (e.isNoteOn())
                 {
                     int note = e.getNoteNumber();
-                    int lane = lane_from_note[note];  // TODO What to do here?
+                    int lane = lane_from_note[note];
                     int division = static_cast<int>(pattern.time_signature.beat_divisions * e.getTimeStamp() / ticks_per_beat);
                     if (division >= 0 && division < pattern.time_signature.total_divisions())
                     {
@@ -385,10 +354,11 @@ void DrummerQueenAudioProcessorEditor::set_pattern(int index, bool update_button
 
     m_lane_combo_boxes.clear();
 	m_lane_name_buttons.clear();
+	auto drums = data().get_current_kit_drums();
     int y = 64;
     for (int i = 0; i < data().lane_count(); ++i) {
         m_lane_combo_boxes.push_back(std::make_unique<DrumNoteComboBox>());
-        for (auto const& drum : mt_power) {
+        for (auto const& drum : drums) {
             m_lane_combo_boxes.back()->addItem(drum.name, drum.note);
         }
         m_lane_combo_boxes.back()->onChange = [this, i]
@@ -400,7 +370,7 @@ void DrummerQueenAudioProcessorEditor::set_pattern(int index, bool update_button
         m_lane_combo_boxes.back()->setBounds(8 + 109, y, 24, 25);
         addAndMakeVisible(*m_lane_combo_boxes.back());
         
-        m_lane_name_buttons.push_back(std::make_unique<LaneButton>(m_lane_combo_boxes.back()->getText()));
+        m_lane_name_buttons.push_back(std::make_unique<LaneButton>(data().get_drum_name(pattern.lanes[i].note)));
         m_lane_name_buttons.back()->setBounds(8, y, 108, 25);
 		m_lane_name_buttons.back()->setConnectedEdges(juce::Button::ConnectedOnLeft | juce::Button::ConnectedOnRight);
 		m_lane_name_buttons.back()->onStateChange = [this, i]
