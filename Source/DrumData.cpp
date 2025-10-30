@@ -407,7 +407,7 @@ void DrumData::from_json(std::string const& json_string)
 	{
 		if (m_kits[i].name == current_kit_name)
 		{
-			m_current_kit = 0;
+			m_current_kit = i;
 			break;
 		}
 	}

@@ -130,6 +130,7 @@ DrummerQueenAudioProcessorEditor::DrummerQueenAudioProcessorEditor (DrummerQueen
 	{
 		m_drum_kit_box.addItem(kit_names[i], i + 1);
 	}
+	m_drum_kit_box.setSelectedId(data().get_current_kit() + 1);
 	m_drum_kit_box.onChange = [this] {
         int kit_index = m_drum_kit_box.getSelectedId() - 1;
 	    data().set_current_kit(kit_index);
