@@ -141,9 +141,6 @@ void DrumData::set_current_pattern(int pattern)
 		return;
 	}
 	m_current_pattern = pattern;
-	m_current_pattern_sequence[0].pattern = pattern;
-	m_current_pattern_sequence[0].start_beat = 0.;
-	m_current_pattern_sequence[0].end_beat = m_patterns[m_current_pattern].time_signature.beats;
 }
 
 void DrumData::set_pattern(int pattern_index, DrumPattern const& pattern)
@@ -249,20 +246,12 @@ void DrumData::set_time_signature(int new_beats, int new_beat_divisions)
 				lane.velocity.resize(new_beats * new_beat_divisions);
 			}
 			update_sequence();
-			if (m_current_pattern == pattern_id)
-			{
-				m_current_pattern_sequence[0].end_beat = new_beats;
-			}
 			update_events();
 		},
 		[this, old_beats, old_beat_divisions, old_pattern = m_patterns[m_current_pattern], pattern_id = m_current_pattern]
 		{
 			m_patterns[pattern_id] = old_pattern;
 			update_sequence();
-			if (m_current_pattern == pattern_id)
-			{
-				m_current_pattern_sequence[0].end_beat = old_beats;
-			}
 			update_events();
 		});
 }

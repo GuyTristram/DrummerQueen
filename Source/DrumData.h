@@ -125,7 +125,12 @@ public:
 
 	std::vector<SequenceItem> const& get_playing_sequence() const
 	{
-		return m_play_sequence && !m_sequence.empty() ? m_sequence : m_current_pattern_sequence;
+		if (m_play_sequence) {
+			return m_sequence;
+		}
+		m_current_pattern_sequence[0].pattern = m_current_pattern;
+		m_current_pattern_sequence[0].end_beat = m_patterns[m_current_pattern].time_signature.beats;
+		return m_current_pattern_sequence;
 	}
 
 	double get_wrapped_time(double time_beats) const
@@ -210,7 +215,7 @@ private:
 
 	std::string m_sequence_str;
 	std::vector<SequenceItem> m_sequence;
-	std::vector<SequenceItem> m_current_pattern_sequence;
+	mutable std::vector<SequenceItem> m_current_pattern_sequence;
 	bool m_play_sequence = false;
 	int m_sequence_length = 0;
 
