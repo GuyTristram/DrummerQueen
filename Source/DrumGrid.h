@@ -35,9 +35,9 @@ public:
 
     //==============================================================================
     void paint (juce::Graphics&) override;
-	void draw_note(juce::Graphics& g, int lane, int sub_beat, int velocity);
     void mouseDown(const juce::MouseEvent& event) override;
-    void setPosition(double p) { m_position = p; }
+    void draw_note(juce::Graphics& g, int lane, int sub_beat, int velocity);
+    void set_position(double p) { m_position = p; }
 
 	void set_new_velocity(int v) { m_new_velocity = v; }
 

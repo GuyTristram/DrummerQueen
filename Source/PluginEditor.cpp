@@ -40,7 +40,8 @@ DrummerQueenAudioProcessorEditor::DrummerQueenAudioProcessorEditor (DrummerQueen
     {
         vb = std::make_unique<VelocityButton>(velocities[i]);
         vb->setRadioGroupId(1);
-        vb->onClick = [this, v = velocities[i]] {m_grid.set_new_velocity(v); };
+        vb->onClick = [this, i, v = velocities[i]] {
+            m_grid.set_new_velocity(v); m_velocity_button_selected = i; };
         addAndMakeVisible(vb.get());
         ++i;
     }
@@ -66,10 +67,12 @@ DrummerQueenAudioProcessorEditor::DrummerQueenAudioProcessorEditor (DrummerQueen
     addAndMakeVisible(m_sequence_length_label);
 
 	m_undo_button.setButtonText("Undo");
+	m_undo_button.setConnectedEdges(juce::Button::ConnectedOnRight);
 	addAndMakeVisible(m_undo_button);
     m_undo_button.onClick = [this] {data().undo(); set_pattern(data().get_current_pattern_id()); m_grid.repaint(); resize_grid(); };
 	m_redo_button.setButtonText("Redo");
-	addAndMakeVisible(m_redo_button);
+    m_redo_button.setConnectedEdges(juce::Button::ConnectedOnLeft);
+    addAndMakeVisible(m_redo_button);
     m_redo_button.onClick = [this] {data().redo(); set_pattern(data().get_current_pattern_id());  m_grid.repaint(); resize_grid(); };
 
     m_swing_slider.setSliderStyle(juce::Slider::LinearHorizontal);
@@ -160,10 +163,10 @@ void DrummerQueenAudioProcessorEditor::resized()
 	int height = MAX_LANES * m_note_height;
     resize_grid();
 	int grid_bottom = m_grid_top + height;
-	m_file_list.setBounds(m_grid_left + width + 8, 32, getWidth() - (m_grid_left + width + 16), getHeight() - 62);
+	m_file_list.setBounds(0, 0, m_lane_button_left, getHeight());
 
-	m_undo_button.setBounds(8, 8, 40, 24);
-	m_redo_button.setBounds(8, 32, 40, 24);
+	m_undo_button.setBounds(m_lane_button_left, 8, 40, 24);
+	m_redo_button.setBounds(m_lane_button_left + 40, 8, 40, 24);
 
     int x = m_grid_left;
     for (auto& vb : m_velocity_buttons)
@@ -171,22 +174,35 @@ void DrummerQueenAudioProcessorEditor::resized()
 		vb->setBounds(x, 32, 24, 24);
 		x += 26;
     }
-    x += 80;
-    m_time_signature_box.setBounds(x, 32, 64, 24);
+    x += 24;
+    m_time_signature_box.setBounds(x, 32, 120, 24);
     m_swing_slider.setBounds(m_grid_left, 8, 200, 24);
-	m_drum_kit_box.setBounds(m_grid_left + 220, 8, 150, 24);
+	m_drum_kit_box.setBounds(m_lane_button_left, m_grid_top-24, m_lane_button_width, 24);
 
-	m_play_sequence_button.setBounds(8, grid_bottom + 36, 24, 24);
+	m_play_sequence_button.setBounds(m_grid_left - 24, grid_bottom + 36, 24, 24);
     m_sequence_editor.setBounds(m_grid_left, grid_bottom + 36, width-80, 24);
     m_sequence_length_label.setBounds(m_grid_left + width - 80, grid_bottom + 36, 80, 24);
 
-    m_drag_button.setBounds(8, grid_bottom + 64, 64, 24);
+    m_drag_button.setBounds(m_grid_left - 24 - 64, grid_bottom + 36, 64, 24);
+}
+
+void DrummerQueenAudioProcessorEditor::mouseWheelMove(const juce::MouseEvent& event, const juce::MouseWheelDetails& wheel)
+{
+	if (!m_grid.isMouseOver()) {
+		return;
+	}
+    if (wheel.deltaY > 0 && m_velocity_button_selected < m_velocity_buttons.size() - 1) {
+		m_velocity_buttons[m_velocity_button_selected + 1]->setToggleState(true, juce::sendNotification);
+	}
+    else if (wheel.deltaY < 0 && m_velocity_button_selected > 0) {
+        m_velocity_buttons[m_velocity_button_selected - 1]->setToggleState(true, juce::sendNotification);
+    }
 }
 
 inline void DrummerQueenAudioProcessorEditor::changeListenerCallback(juce::ChangeBroadcaster*)
 {
 	auto bar_pos_beats = audioProcessor.barPos();
-    m_grid.setPosition(bar_pos_beats);
+    m_grid.set_position(bar_pos_beats);
     if (bar_pos_beats > 0.f && data().is_playing_sequence()) {
         auto index = data().get_sequence_index(bar_pos_beats);
         auto pattern = data().get_playing_sequence()[index].pattern;
@@ -338,11 +354,11 @@ void DrummerQueenAudioProcessorEditor::set_pattern(int index, bool update_button
             m_lane_name_buttons[i]->setButtonText(m_lane_combo_boxes[i]->getText());
         };
         m_lane_combo_boxes.back()->setSelectedId(pattern.lanes[i].note, juce::dontSendNotification);
-        m_lane_combo_boxes.back()->setBounds(8 + 109, y, 24, 25);
+        m_lane_combo_boxes.back()->setBounds(m_grid_left-24, y, 24, 25);
         addAndMakeVisible(*m_lane_combo_boxes.back());
         
         m_lane_name_buttons.push_back(std::make_unique<LaneButton>(data().get_drum_name(pattern.lanes[i].note)));
-        m_lane_name_buttons.back()->setBounds(8, y, 108, 25);
+        m_lane_name_buttons.back()->setBounds(m_lane_button_left, y, m_lane_button_width, 25);
 		m_lane_name_buttons.back()->setConnectedEdges(juce::Button::ConnectedOnLeft | juce::Button::ConnectedOnRight);
 		m_lane_name_buttons.back()->onStateChange = [this, i]
 			{
@@ -356,7 +372,7 @@ void DrummerQueenAudioProcessorEditor::set_pattern(int index, bool update_button
     }
 	if (data().lane_count() < MAX_LANES) {
 		m_add_lane_button.setButtonText("+");
-		m_add_lane_button.setBounds(8, y, 108, 25);
+		m_add_lane_button.setBounds(m_lane_button_left, y, m_lane_button_width, 25);
 		m_add_lane_button.onClick = [this]
 			{
 				if (data().lane_count() < MAX_LANES)
@@ -440,31 +456,39 @@ void DrummerQueenAudioProcessorEditor::browserRootChanged(const juce::File& newR
 	data().m_midi_file_directory = newRoot.getFullPathName().toStdString();
 }
 
+namespace {
+    void drag_midi_sequence(std::vector<SequenceItem> const& sequence, DrumData &data)
+    {
+        juce::File tempDirectory = juce::File::getSpecialLocation(juce::File::tempDirectory);
+        juce::File tempFile = tempDirectory.getChildFile("pattern.midi");
+        juce::MidiMessageSequence midi_sequence;
+        int tpq = 960;
+        for (auto p : sequence)
+        {
+            // TODO fix this!
+            auto pattern_length = p.end_beat - p.start_beat;
+            data.get_events(p.pattern, 0., pattern_length, p.start_beat, pattern_length * tpq, midi_sequence);
+        }
+        juce::MidiFile midi_file;
+        midi_file.setTicksPerQuarterNote(tpq);
+        midi_file.addTrack(midi_sequence);
+        auto stream = tempFile.createOutputStream();
+        if (stream)
+        {
+            stream->setPosition(0);
+            stream->truncate();
+            midi_file.writeTo(*stream);
+            stream->flush();
+            stream = nullptr;
+            juce::DragAndDropContainer::performExternalDragDropOfFiles({ tempFile.getFullPathName() }, true);
+        }
+    }
+}
+
+
 void DrummerQueenAudioProcessorEditor::drag_midi()
 {
-    juce::File tempDirectory = juce::File::getSpecialLocation(juce::File::tempDirectory);
-    juce::File tempFile = tempDirectory.getChildFile("pattern.midi");
-    juce::MidiMessageSequence midi_sequence;
-    auto sequence = data().is_playing_sequence() ? data().get_sequence() : std::vector<SequenceItem>{ {.0f,4.f, data().get_current_pattern_id() } };
-    int tpq = 960;
-	for (auto p : sequence)
-	{
-        // TODO fix this!
-        data().get_events(p.pattern, 0., data().beats(), p.start_beat, data().beats() * tpq, midi_sequence);
-	}
-    juce::MidiFile midi_file;
-    midi_file.setTicksPerQuarterNote(tpq);
-    midi_file.addTrack(midi_sequence);
-    auto stream = tempFile.createOutputStream();
-    if (stream)
-    {
-        stream->setPosition(0);
-        stream->truncate();
-        midi_file.writeTo(*stream);
-        stream->flush();
-        stream = nullptr;
-        juce::DragAndDropContainer::performExternalDragDropOfFiles({ tempFile.getFullPathName() }, true);
-    }
+	drag_midi_sequence(data().get_playing_sequence(), data());
 }
 
 void DrumNoteComboBox::paint(juce::Graphics& g)
@@ -496,6 +520,15 @@ void PatternButton::filesDropped(const juce::StringArray& files, int, int)
     if (files.size() > 0) {
         m_editor->drag_onto_pattern(m_pattern, files[0]);
     }
+}
+
+void PatternButton::mouseDrag(const juce::MouseEvent& event)
+{
+	auto& pattern = m_editor->data().get_pattern(m_pattern);
+	std::vector<SequenceItem> sequence(1);
+    sequence[0].pattern = m_pattern;
+    sequence[0].end_beat = pattern.time_signature.beats;
+	drag_midi_sequence(sequence, m_editor->data());
 }
 
 void LaneButton::paintButton(juce::Graphics& g, bool shouldDrawButtonAsHighlighted, bool shouldDrawButtonAsDown)

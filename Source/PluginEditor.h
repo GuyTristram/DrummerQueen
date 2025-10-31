@@ -28,6 +28,7 @@ public:
 
 	bool isInterestedInFileDrag(const juce::StringArray& files) override;
 	void filesDropped(const juce::StringArray& files, int x, int y) override;
+    void mouseDrag(const juce::MouseEvent& event) override;
 
 private:
 	DrummerQueenAudioProcessorEditor* m_editor = nullptr;
@@ -77,24 +78,27 @@ public:
     void paint (juce::Graphics&) override;
     void resize_grid();
     void resized() override;
+    void mouseWheelMove(const juce::MouseEvent& event,
+        const juce::MouseWheelDetails& wheel) override;
 
     void changeListenerCallback(juce::ChangeBroadcaster*) override;
 
     void delete_lane();
 
 	void drag_onto_pattern(int pattern, const juce::String& files);
+    DrumData& data() { return audioProcessor.m_data; }
 private:
     void drag_midi();
     void sliderValueChanged(juce::Slider* slider) override;
     void set_pattern(int i, bool update_button = true);
     void update_pattern_buttons();
-	DrumData& data() { return audioProcessor.m_data; }
     // This reference is provided as a quick way for your editor to
     // access the processor object that created it.
     DrummerQueenAudioProcessor& audioProcessor;
 
     DrumGrid m_grid;
     std::vector<std::unique_ptr<juce::ToggleButton>> m_velocity_buttons;
+	int m_velocity_button_selected = 0;
     juce::Component m_pattern_button_parent;
     std::vector<std::unique_ptr<PatternButton>> m_pattern_buttons;
     juce::TextButton m_add_pattern_button;
@@ -137,10 +141,13 @@ private:
     void fileDoubleClicked(const juce::File &) override {}
     void browserRootChanged(const juce::File & newRoot) override;
 
-    int m_grid_top = 64;
-    int m_grid_left = 140;
-
     int m_note_width = 24;
     int m_note_height = 24;
+
+    int m_grid_top = 64;
+    int m_grid_left = 340;
+    int m_lane_button_width = 108;
+	int m_lane_button_left = m_grid_left - m_lane_button_width - m_note_width;
+
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (DrummerQueenAudioProcessorEditor)
 };
