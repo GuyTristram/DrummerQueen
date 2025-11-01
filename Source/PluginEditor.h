@@ -101,7 +101,6 @@ private:
 	int m_velocity_button_selected = 0;
     juce::Component m_pattern_button_parent;
     std::vector<std::unique_ptr<PatternButton>> m_pattern_buttons;
-    juce::TextButton m_add_pattern_button;
 
     std::vector<std::unique_ptr<LaneButton>> m_lane_name_buttons;
     std::vector<std::unique_ptr<juce::ComboBox>> m_lane_combo_boxes;
@@ -144,7 +143,7 @@ private:
     int m_note_width = 24;
     int m_note_height = 24;
 
-    int m_grid_top = 64;
+    int m_grid_top = 72;
     int m_grid_left = 340;
     int m_lane_button_width = 108;
 	int m_lane_button_left = m_grid_left - m_lane_button_width - m_note_width;

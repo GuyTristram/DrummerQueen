@@ -71,7 +71,7 @@ class DrumData
 {
 public:
     DrumData(DrumDataListener &listener)
-		: m_listener(listener), m_patterns(1),
+		: m_listener(listener),
 		m_midi_file_directory(juce::File::getSpecialLocation(juce::File::userDocumentsDirectory).getFullPathName().toStdString())
     {
 		load_kits();
@@ -80,7 +80,6 @@ public:
 
     void add_drum(std::string name, int note);
 
-	int add_pattern();
 	void set_current_pattern(int pattern);
 	int get_current_pattern_id() const { return m_current_pattern; }
 	const DrumPattern& get_current_pattern() { return m_patterns[m_current_pattern]; }
@@ -205,12 +204,13 @@ public:
 	std::vector<std::string> get_kit_names() const;
 	std::vector<DrumInfo> const &get_current_kit_drums() const;
 	std::string get_drum_name(int note) const;
-
+	static const int NUM_PATTERNS = 16;
+	using PatternArray = std::array<DrumPattern, NUM_PATTERNS>;
 private:
 	void update_events();
 	void update_events(int pattern);
 	void update_sequence();
-	std::vector<DrumPattern> m_patterns;
+	PatternArray m_patterns;
 	int m_current_pattern = 0;
 	float m_swing = 0.5f;
 

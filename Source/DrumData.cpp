@@ -42,7 +42,7 @@ namespace
 		return result;
 	}
 
-	std::vector<SequenceItem> parse_seq(const char* c, const std::vector<DrumPattern> &patterns) {
+	std::vector<SequenceItem> parse_seq(const char* c, DrumData::PatternArray const &patterns) {
 		auto seq = parse_seq_impl(c);
 		double beat_time = 0.f;
 		for (auto& item : seq) {
@@ -124,14 +124,6 @@ void DrumData::add_drum(std::string name, int note)
 		{
 			m_patterns[pattern].lanes.pop_back();
 		});
-}
-
-int DrumData::add_pattern()
-{
-	//m_patterns.emplace_back((int)m_kit.drums.size(), m_beats * m_beat_divisions);
-	m_patterns.emplace_back(m_patterns[m_current_pattern]);
-	m_listener.changed();
-	return (int)m_patterns.size() - 1;
 }
 
 void DrumData::set_current_pattern(int pattern) 
@@ -410,7 +402,6 @@ void DrumData::from_json(std::string const& json_string)
 	}
 	m_play_sequence = j.value("play_sequence", false);
 	m_current_pattern = j.value("current_pattern", 0);
-	m_patterns.clear();
 	int pattern_count = 0;
 	for (auto& p : j["patterns"])
 	{
@@ -443,7 +434,7 @@ void DrumData::from_json(std::string const& json_string)
 			}
 			pattern.lanes.push_back(lane);
 		}
-		m_patterns.push_back(pattern);
+		m_patterns[pattern_count] = pattern;
 		update_events(pattern_count);
 		++pattern_count;
 	}

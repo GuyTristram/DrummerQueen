@@ -47,11 +47,16 @@ DrummerQueenAudioProcessorEditor::DrummerQueenAudioProcessorEditor (DrummerQueen
     }
 	m_velocity_buttons.front()->setToggleState(true, juce::dontSendNotification);
 
+    int n_patterns = data().pattern_count();
+    for (int i = 0; i < n_patterns; ++i)
+    {
+        m_pattern_buttons.emplace_back(std::make_unique<PatternButton>(this, i));
+        m_pattern_buttons.back()->onClick = [this, i] {set_pattern(i, false); };
+        m_pattern_buttons.back()->setRadioGroupId(2);
+        m_pattern_button_parent.addAndMakeVisible(m_pattern_buttons.back().get());
+    }
     addAndMakeVisible(m_pattern_button_parent);
     update_pattern_buttons();
-	m_add_pattern_button.setButtonText("+");
-	m_add_pattern_button.onClick = [this] {data().set_current_pattern(data().add_pattern()); update_pattern_buttons(); };
-    m_pattern_button_parent.addAndMakeVisible(m_add_pattern_button);
 
 	m_sequence_editor.setText(data().get_sequence_str());
     addAndMakeVisible(m_sequence_editor);
@@ -75,17 +80,17 @@ DrummerQueenAudioProcessorEditor::DrummerQueenAudioProcessorEditor (DrummerQueen
     addAndMakeVisible(m_redo_button);
     m_redo_button.onClick = [this] {data().redo(); set_pattern(data().get_current_pattern_id());  m_grid.repaint(); resize_grid(); };
 
-    m_swing_slider.setSliderStyle(juce::Slider::LinearHorizontal);
-    m_swing_slider.setRange(0.0, 1.0, 0.05);
-    m_swing_slider.setTextBoxStyle(juce::Slider::NoTextBox, false, 90, 0);
-    m_swing_slider.setPopupDisplayEnabled(true, false, this);
-    m_swing_slider.setTextValueSuffix(" Swing");
-    m_swing_slider.setValue(0.5);
-	m_swing_slider.addListener(this);
-
-	addAndMakeVisible(m_swing_slider);
-
-    //g.drawFittedText(std::format("Beat {}", audioProcessor.barPos()), getLocalBounds(), juce::Justification::topLeft, 1);
+	// TODO: decide whether to keep swing
+    if (false) {
+        m_swing_slider.setSliderStyle(juce::Slider::LinearHorizontal);
+        m_swing_slider.setRange(0.0, 1.0, 0.05);
+        m_swing_slider.setTextBoxStyle(juce::Slider::NoTextBox, false, 90, 0);
+        m_swing_slider.setPopupDisplayEnabled(true, false, this);
+        m_swing_slider.setTextValueSuffix(" Swing");
+        m_swing_slider.setValue(0.5);
+        m_swing_slider.addListener(this);
+        addAndMakeVisible(m_swing_slider);
+    }
 
     add_time_signature("4/4", 4, 4);
     add_time_signature("3/4", 3, 4);
@@ -132,7 +137,6 @@ DrummerQueenAudioProcessorEditor::DrummerQueenAudioProcessorEditor (DrummerQueen
 
     setSize(1200, 448);
     audioProcessor.addChangeListener(this);
-
 }
 
 DrummerQueenAudioProcessorEditor::~DrummerQueenAudioProcessorEditor()
@@ -159,31 +163,46 @@ void DrummerQueenAudioProcessorEditor::resized()
 {
     // This is generally where you'll want to lay out the positions of any
     // subcomponents in your editor..
-	int width = MAX_DIVISIONS * m_note_width;
-	int height = MAX_LANES * m_note_height;
+	const int width = MAX_DIVISIONS * m_note_width;
+	const int height = MAX_LANES * m_note_height;
     resize_grid();
-	int grid_bottom = m_grid_top + height;
+	const int grid_bottom = m_grid_top + height;
 	m_file_list.setBounds(0, 0, m_lane_button_left, getHeight());
 
 	m_undo_button.setBounds(m_lane_button_left, 8, 40, 24);
 	m_redo_button.setBounds(m_lane_button_left + 40, 8, 40, 24);
 
-    int x = m_grid_left;
+    const int butt_size = 24;
+    const int butt_spacing = butt_size + 2;
+
+    int n_patterns = data().pattern_count();
+    m_pattern_button_parent.setBounds(m_grid_left, 8, butt_spacing * n_patterns, butt_spacing * 2);
+    int x = 0;
+    int y = 0;
+    for (auto& pb : m_pattern_buttons)
+    {
+        pb->setBounds(x, y, butt_size, butt_size);
+        x += butt_spacing;
+    }
+
+
+    x = m_grid_left;
     for (auto& vb : m_velocity_buttons)
     {
-		vb->setBounds(x, 32, 24, 24);
+		vb->setBounds(x, m_grid_top - 26, 24, 24);
 		x += 26;
     }
     x += 24;
-    m_time_signature_box.setBounds(x, 32, 120, 24);
+    m_time_signature_box.setBounds(x, m_grid_top - 26, 120, 24);
     m_swing_slider.setBounds(m_grid_left, 8, 200, 24);
 	m_drum_kit_box.setBounds(m_lane_button_left, m_grid_top-24, m_lane_button_width, 24);
 
-	m_play_sequence_button.setBounds(m_grid_left - 24, grid_bottom + 36, 24, 24);
-    m_sequence_editor.setBounds(m_grid_left, grid_bottom + 36, width-80, 24);
-    m_sequence_length_label.setBounds(m_grid_left + width - 80, grid_bottom + 36, 80, 24);
+	const int seq_y = grid_bottom + 48;
+	m_play_sequence_button.setBounds(m_grid_left - 24, seq_y, 24, 24);
+    m_sequence_editor.setBounds(m_grid_left, seq_y, width-80, 24);
+    m_sequence_length_label.setBounds(m_grid_left + width - 80, seq_y, 80, 24);
 
-    m_drag_button.setBounds(m_grid_left - 24 - 64, grid_bottom + 36, 64, 24);
+    m_drag_button.setBounds(m_grid_left - 24 - 64, seq_y, 64, 24);
 }
 
 void DrummerQueenAudioProcessorEditor::mouseWheelMove(const juce::MouseEvent& event, const juce::MouseWheelDetails& wheel)
@@ -342,7 +361,7 @@ void DrummerQueenAudioProcessorEditor::set_pattern(int index, bool update_button
     m_lane_combo_boxes.clear();
 	m_lane_name_buttons.clear();
 	auto drums = data().get_current_kit_drums();
-    int y = 64;
+    int y = m_grid_top;
     for (int i = 0; i < data().lane_count(); ++i) {
         m_lane_combo_boxes.push_back(std::make_unique<DrumNoteComboBox>());
         for (auto const& drum : drums) {
@@ -397,33 +416,7 @@ void DrummerQueenAudioProcessorEditor::set_pattern(int index, bool update_button
 
 void DrummerQueenAudioProcessorEditor::update_pattern_buttons()
 {
-	for (auto& pb : m_pattern_buttons)
-	{
-		removeChildComponent(pb.get());
-	}
-	m_pattern_buttons.clear();
-
-	int n_patterns = data().pattern_count();
-    for (int i = 0; i < n_patterns; ++i)
-    {
-        m_pattern_buttons.emplace_back(std::make_unique<PatternButton>(this, i));
-        m_pattern_buttons.back()->onClick = [this, i] {set_pattern(i, false);};
-		m_pattern_buttons.back()->setRadioGroupId(2);
-        m_pattern_button_parent.addAndMakeVisible(m_pattern_buttons.back().get());
-    }
-	m_pattern_buttons[data().get_current_pattern_id()]->setToggleState(true, juce::dontSendNotification);
-    int height = MAX_LANES * m_note_height;
-    int grid_bottom = m_grid_top + height;
-    m_pattern_button_parent.setBounds(m_grid_left, grid_bottom + 8, 24 * 16, 24);
-    int x = 0;
-    int y = 0;
-    for (auto& pb : m_pattern_buttons)
-    {
-        pb->setBounds(x, y, 24, 24);
-        x += 26;
-    }
-    m_add_pattern_button.setBounds(x, y, 24, 24);
-
+    m_pattern_buttons[data().get_current_pattern_id()]->setToggleState(true, juce::dontSendNotification);
 }
 
 void DrummerQueenAudioProcessorEditor::add_time_signature(char const* name, int beats, int beat_divisions)
