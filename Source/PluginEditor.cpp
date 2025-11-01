@@ -210,10 +210,10 @@ void DrummerQueenAudioProcessorEditor::mouseWheelMove(const juce::MouseEvent& ev
 	if (!m_grid.isMouseOver()) {
 		return;
 	}
-    if (wheel.deltaY > 0 && m_velocity_button_selected < m_velocity_buttons.size() - 1) {
+    if (wheel.deltaY < 0 && m_velocity_button_selected < m_velocity_buttons.size() - 1) {
 		m_velocity_buttons[m_velocity_button_selected + 1]->setToggleState(true, juce::sendNotification);
 	}
-    else if (wheel.deltaY < 0 && m_velocity_button_selected > 0) {
+    else if (wheel.deltaY > 0 && m_velocity_button_selected > 0) {
         m_velocity_buttons[m_velocity_button_selected - 1]->setToggleState(true, juce::sendNotification);
     }
 }

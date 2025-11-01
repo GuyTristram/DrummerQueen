@@ -52,12 +52,15 @@ void DrumGrid::paint(juce::Graphics& g)
 			int v = m_data.get_hit(lane, sub_beat);
             if (v > 0)
             {
-                if (sub_beat < wrapped_pos * m_data.beat_divisions() && sub_beat + 1 > wrapped_pos * m_data.beat_divisions())
-                {
+                const auto p = wrapped_pos * m_data.beat_divisions();
+				bool in_play_position = sub_beat < p && sub_beat + 1 > p;
+                if (m_position == 0) {
+                    g.setColour(juce::Colour(0xffd0d0d0));
+                }
+                else if (in_play_position){
                     g.setColour(juce::Colours::white);
                 }
-                else
-                {
+                else {
                     g.setColour(juce::Colour(0xffa0a0a0));
                 }
                 draw_note(g, lane, sub_beat, v);
