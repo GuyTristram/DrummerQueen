@@ -48,10 +48,10 @@ DrummerQueenAudioProcessorEditor::DrummerQueenAudioProcessorEditor (DrummerQueen
 	m_velocity_buttons.front()->setToggleState(true, juce::dontSendNotification);
 
     int n_patterns = data().pattern_count();
-    for (int i = 0; i < n_patterns; ++i)
+    for (int p_index = 0; p_index < n_patterns; ++p_index)
     {
-        m_pattern_buttons.emplace_back(std::make_unique<PatternButton>(this, i));
-        m_pattern_buttons.back()->onClick = [this, i] {set_pattern(i, false); };
+        m_pattern_buttons.emplace_back(std::make_unique<PatternButton>(this, p_index));
+        m_pattern_buttons.back()->onClick = [this, p_index] {set_pattern(p_index, false); };
         m_pattern_buttons.back()->setRadioGroupId(2);
         m_pattern_button_parent.addAndMakeVisible(m_pattern_buttons.back().get());
     }
@@ -109,9 +109,9 @@ DrummerQueenAudioProcessorEditor::DrummerQueenAudioProcessorEditor (DrummerQueen
     addAndMakeVisible(m_time_signature_box);
 
 	auto kit_names = data().get_kit_names();
-	for (int i = 0; i < kit_names.size(); ++i)
+	for (int k = 0; k < kit_names.size(); ++k)
 	{
-		m_drum_kit_box.addItem(kit_names[i], i + 1);
+		m_drum_kit_box.addItem(kit_names[k], k + 1);
 	}
 	m_drum_kit_box.setSelectedId(data().get_current_kit() + 1);
 	m_drum_kit_box.onChange = [this] {
@@ -205,7 +205,7 @@ void DrummerQueenAudioProcessorEditor::resized()
     m_drag_button.setBounds(m_grid_left - 24 - 64, seq_y, 64, 24);
 }
 
-void DrummerQueenAudioProcessorEditor::mouseWheelMove(const juce::MouseEvent& event, const juce::MouseWheelDetails& wheel)
+void DrummerQueenAudioProcessorEditor::mouseWheelMove(const juce::MouseEvent&, const juce::MouseWheelDetails& wheel)
 {
 	if (!m_grid.isMouseOver()) {
 		return;
@@ -218,7 +218,7 @@ void DrummerQueenAudioProcessorEditor::mouseWheelMove(const juce::MouseEvent& ev
     }
 }
 
-inline void DrummerQueenAudioProcessorEditor::changeListenerCallback(juce::ChangeBroadcaster*)
+void DrummerQueenAudioProcessorEditor::changeListenerCallback(juce::ChangeBroadcaster*)
 {
 	auto bar_pos_beats = audioProcessor.barPos();
     m_grid.set_position(bar_pos_beats);
@@ -460,7 +460,7 @@ namespace {
         {
             // TODO fix this!
             auto pattern_length = p.end_beat - p.start_beat;
-            data.get_events(p.pattern, 0., pattern_length, p.start_beat, pattern_length * tpq, midi_sequence);
+            data.get_events(p.pattern, 0., pattern_length, p.start_beat, int(pattern_length * tpq), midi_sequence);
         }
         juce::MidiFile midi_file;
         midi_file.setTicksPerQuarterNote(tpq);
@@ -515,7 +515,7 @@ void PatternButton::filesDropped(const juce::StringArray& files, int, int)
     }
 }
 
-void PatternButton::mouseDrag(const juce::MouseEvent& event)
+void PatternButton::mouseDrag(const juce::MouseEvent&)
 {
 	auto& pattern = m_editor->data().get_pattern(m_pattern);
 	std::vector<SequenceItem> sequence(1);
