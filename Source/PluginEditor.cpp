@@ -10,6 +10,9 @@
 #include "PluginEditor.h"
 #include <format>
 #include "json.hpp"
+#include "share.c"
+#define STB_IMAGE_IMPLEMENTATION
+#include "stb_image.h"
 
 namespace
 {
@@ -176,19 +179,16 @@ void DrummerQueenAudioProcessorEditor::resized()
     const int butt_spacing = butt_size + 2;
 
     int n_patterns = data().pattern_count();
-    m_pattern_button_parent.setBounds(m_grid_left, 8, butt_spacing * n_patterns, butt_spacing * 2);
-    int x = 0;
-    int y = 0;
-    for (auto& pb : m_pattern_buttons)
-    {
-        pb->setBounds(x, y, butt_size, butt_size);
-        x += butt_spacing;
+    const int butt_per_line = n_patterns / 2;
+    m_pattern_button_parent.setBounds(m_grid_left, 8, butt_spacing * n_patterns / 2, butt_spacing * 2);
+    int i = 0;
+    for (auto& pb : m_pattern_buttons) {
+        pb->setBounds(butt_spacing * (i % butt_per_line), butt_spacing * (i / butt_per_line), butt_size, butt_size);
+        ++i;
     }
 
-
-    x = m_grid_left;
-    for (auto& vb : m_velocity_buttons)
-    {
+    int x = m_grid_left;
+    for (auto& vb : m_velocity_buttons) {
 		vb->setBounds(x, m_grid_top - 26, 24, 24);
 		x += 26;
     }
@@ -197,7 +197,7 @@ void DrummerQueenAudioProcessorEditor::resized()
     m_swing_slider.setBounds(m_grid_left, 8, 200, 24);
 	m_drum_kit_box.setBounds(m_lane_button_left, m_grid_top-24, m_lane_button_width, 24);
 
-	const int seq_y = grid_bottom + 48;
+	const int seq_y = grid_bottom + 8;
 	m_play_sequence_button.setBounds(m_grid_left - 24, seq_y, 24, 24);
     m_sequence_editor.setBounds(m_grid_left, seq_y, width-80, 24);
     m_sequence_length_label.setBounds(m_grid_left + width - 80, seq_y, 80, 24);
@@ -478,7 +478,6 @@ namespace {
     }
 }
 
-
 void DrummerQueenAudioProcessorEditor::drag_midi()
 {
 	drag_midi_sequence(data().get_playing_sequence(), data());
@@ -494,8 +493,8 @@ void DrumNoteComboBox::paint(juce::Graphics& g)
 
 void PatternButton::paintButton(juce::Graphics& g, bool, bool)
 {
-    g.fillAll(juce::Colours::black);
-	g.setColour(getToggleState() ? juce::Colours::white : juce::Colours::grey);
+    g.fillAll(getToggleState() ? juce::Colours::white : juce::Colours::black);
+	g.setColour(getToggleState() ? juce::Colours::black : juce::Colours::white);
 
     char label[2] = { char(m_pattern) + 'A', 0 };
     g.drawText(label, getLocalBounds(), juce::Justification::centred);
@@ -549,4 +548,23 @@ void LaneButton::paintButton(juce::Graphics& g, bool shouldDrawButtonAsHighlight
         g.drawFittedText(getButtonText(),
             leftIndent, yIndent, textWidth, getHeight() - yIndent * 2,
             juce::Justification::centredLeft, 2);
+}
+
+DragButton::DragButton()
+{
+    int x, y, comp;
+    auto share_img = stbi_load_from_memory(share_png, sizeof(share_png), &x, &y, &comp, 0);
+	juce::Image img(juce::Image::ARGB, x, y, false);
+    for (int ix = 0; ix < x; ++ix) {
+        for (int iy = 0; iy < y; ++iy) {
+            int index = (iy * x + ix) * comp;
+            juce::Colour c;
+            c = juce::Colour::fromRGBA(share_img[index], share_img[index + 1], share_img[index + 2], share_img[index + 3]);
+            img.setPixelAt(ix, iy, c);
+        }
+    }
+	setImages(false, true, true,
+		img, 1.f, juce::Colours::transparentBlack,
+		img, 1.f, juce::Colours::transparentBlack,
+		img, 1.f, juce::Colours::transparentBlack);
 }

@@ -2817,6 +2817,7 @@
       <AdditionalOptions> /bigobj %(AdditionalOptions)</AdditionalOptions>
     </ClCompile>
     <ClCompile Include="..\..\JuceLibraryCode\include_juce_gui_extra.cpp" />
+    <ClCompile Include="..\..\Source\share.c" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\Source\DrumData.h" />
@@ -4115,6 +4116,7 @@
     <ClInclude Include="..\..\..\3rdParty\JUCE\modules\juce_gui_extra\juce_gui_extra.h" />
     <ClInclude Include="..\..\JuceLibraryCode\JuceHeader.h" />
     <ClInclude Include="..\..\JuceLibraryCode\JucePluginDefines.h" />
+    <ClInclude Include="..\..\Source\stb_image.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="..\..\..\3rdParty\JUCE\modules\juce_audio_devices\native\oboe\src\common\README.md" />

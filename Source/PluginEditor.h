@@ -36,13 +36,14 @@ private:
 };
 
 
-class DragButton : public juce::TextButton
+class DragButton : public juce::ImageButton
 {
 public:
+    DragButton();
     std::function< void()> 	onStartDrag;
 
 protected:
-    void mouseDown(const juce::MouseEvent& event) override { TextButton::mouseDown(event);  onStartDrag(); }
+    void mouseDown(const juce::MouseEvent& event) override { ImageButton::mouseDown(event);  onStartDrag(); }
 };
 
 class DrumNoteComboBox : public juce::ComboBox
@@ -143,7 +144,7 @@ private:
     int m_note_width = 24;
     int m_note_height = 24;
 
-    int m_grid_top = 72;
+    int m_grid_top = 97;
     int m_grid_left = 340;
     int m_lane_button_width = 108;
 	int m_lane_button_left = m_grid_left - m_lane_button_width - m_note_width;
