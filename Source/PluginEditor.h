@@ -144,7 +144,7 @@ private:
     int m_note_width = 24;
     int m_note_height = 24;
 
-    int m_grid_top = 97;
+    int m_grid_top = 121;
     int m_grid_left = 340;
     int m_lane_button_width = 108;
 	int m_lane_button_left = m_grid_left - m_lane_button_width - m_note_width;

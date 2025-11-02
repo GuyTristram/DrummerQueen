@@ -138,7 +138,7 @@ DrummerQueenAudioProcessorEditor::DrummerQueenAudioProcessorEditor (DrummerQueen
 	m_file_list.setRoot(juce::File(data().m_midi_file_directory));
 	m_file_list.addListener(this);
 
-    setSize(1200, 448);
+    setSize(1124, 448);
     audioProcessor.addChangeListener(this);
 }
 
@@ -197,12 +197,12 @@ void DrummerQueenAudioProcessorEditor::resized()
     m_swing_slider.setBounds(m_grid_left, 8, 200, 24);
 	m_drum_kit_box.setBounds(m_lane_button_left, m_grid_top-24, m_lane_button_width, 24);
 
-	const int seq_y = grid_bottom + 8;
-	m_play_sequence_button.setBounds(m_grid_left - 24, seq_y, 24, 24);
-    m_sequence_editor.setBounds(m_grid_left, seq_y, width-80, 24);
+	const int seq_y = butt_size * 2 + 16;
+    m_drag_button.setBounds(m_lane_button_left, seq_y, 24, 24);
+    m_play_sequence_button.setBounds(m_lane_button_left + butt_spacing, seq_y, 24, 24);
+    m_sequence_editor.setBounds(m_lane_button_left + butt_spacing*2, seq_y, width-80, 24);
     m_sequence_length_label.setBounds(m_grid_left + width - 80, seq_y, 80, 24);
 
-    m_drag_button.setBounds(m_grid_left - 24 - 64, seq_y, 64, 24);
 }
 
 void DrummerQueenAudioProcessorEditor::mouseWheelMove(const juce::MouseEvent&, const juce::MouseWheelDetails& wheel)
@@ -458,7 +458,6 @@ namespace {
         int tpq = 960;
         for (auto p : sequence)
         {
-            // TODO fix this!
             auto pattern_length = p.end_beat - p.start_beat;
             data.get_events(p.pattern, 0., pattern_length, p.start_beat, int(pattern_length * tpq), midi_sequence);
         }
