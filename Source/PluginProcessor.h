@@ -66,6 +66,9 @@ private:
     double m_bar_pos_beats = -1.;
     juce::AudioParameterFloat* m_swing;
 	int m_play_note = -1;
+	static constexpr int MAX_MIDI_MESSAGES = 32;
+	std::array <DrumEvent, MAX_MIDI_MESSAGES> m_midi_messages;
+	int m_midi_message_count = 0;
 
     //==============================================================================
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (DrummerQueenAudioProcessor)

@@ -68,7 +68,7 @@ DrummerQueenAudioProcessorEditor::DrummerQueenAudioProcessorEditor (DrummerQueen
 			m_sequence_length_label.setText(std::format("Len: {}", data().sequence_length()), juce::dontSendNotification);
         };
 	addAndMakeVisible(m_play_sequence_button);
-    m_play_sequence_button.setToggleState(data().is_playing_sequence(), false);
+    m_play_sequence_button.setToggleState(data().is_playing_sequence(), juce::dontSendNotification);
 	m_play_sequence_button.onClick = [this] {data().play_sequence(m_play_sequence_button.getToggleState()); };
     addAndMakeVisible(m_sequence_length_label);
 
@@ -166,10 +166,8 @@ void DrummerQueenAudioProcessorEditor::resize_grid()
 void DrummerQueenAudioProcessorEditor::layout_components()
 {
 	const int width = MAX_DIVISIONS * m_note_width;
-	const int height = MAX_LANES * m_note_height;
     resize_grid();
 
-    const int grid_bottom = m_grid_top + height;
 	m_file_list.setBounds(0, 0, m_lane_button_left, getHeight());
 
 	m_undo_button.setBounds(m_lane_button_left, 8, 40, 24);
@@ -178,7 +176,7 @@ void DrummerQueenAudioProcessorEditor::layout_components()
     const int butt_size = 24;
     const int butt_spacing = butt_size + 2;
 
-    int n_patterns = data().pattern_count();
+    const int n_patterns = data().pattern_count();
     const int butt_per_line = n_patterns / 2;
     m_pattern_button_parent.setBounds(m_grid_left, 8, butt_spacing * n_patterns / 2, butt_spacing * 2);
     int i = 0;
