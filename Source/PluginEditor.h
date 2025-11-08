@@ -31,6 +31,7 @@ public:
     void mouseDrag(const juce::MouseEvent& event) override;
 
 private:
+	std::string get_suffix() const;
 	DrummerQueenAudioProcessorEditor* m_editor = nullptr;
     int m_pattern;
 };
@@ -77,12 +78,14 @@ public:
 
     //==============================================================================
     void paint (juce::Graphics&) override;
-    void resize_grid();
-    void resized() override;
     void mouseWheelMove(const juce::MouseEvent& event,
         const juce::MouseWheelDetails& wheel) override;
 
     void changeListenerCallback(juce::ChangeBroadcaster*) override;
+
+    void resize_grid();
+    void layout_components();
+
 
     void delete_lane();
 

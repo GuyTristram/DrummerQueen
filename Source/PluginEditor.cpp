@@ -138,6 +138,7 @@ DrummerQueenAudioProcessorEditor::DrummerQueenAudioProcessorEditor (DrummerQueen
 	m_file_list.setRoot(juce::File(data().m_midi_file_directory));
 	m_file_list.addListener(this);
 
+    layout_components();
     setSize(1124, 448);
     audioProcessor.addChangeListener(this);
 }
@@ -156,20 +157,21 @@ void DrummerQueenAudioProcessorEditor::paint (juce::Graphics& g)
 
 void DrummerQueenAudioProcessorEditor::resize_grid()
 {
-    int width = data().total_divisions() * m_note_width + 1;
-    int height = data().lane_count() * m_note_height + 1;
+    const int width = data().total_divisions() * m_note_width + 1;
+    const int height = data().lane_count() * m_note_height + 1;
     m_grid.setBounds(m_grid_left, m_grid_top, width, height);
+    const int width_min = std::max(data().total_divisions(), 16) * m_note_width + 1;
+    setSize(m_grid_left + width_min + 8, 448);
 }
 
 
-void DrummerQueenAudioProcessorEditor::resized()
+void DrummerQueenAudioProcessorEditor::layout_components()
 {
-    // This is generally where you'll want to lay out the positions of any
-    // subcomponents in your editor..
 	const int width = MAX_DIVISIONS * m_note_width;
 	const int height = MAX_LANES * m_note_height;
     resize_grid();
-	const int grid_bottom = m_grid_top + height;
+
+    const int grid_bottom = m_grid_top + height;
 	m_file_list.setBounds(0, 0, m_lane_button_left, getHeight());
 
 	m_undo_button.setBounds(m_lane_button_left, 8, 40, 24);
@@ -200,7 +202,7 @@ void DrummerQueenAudioProcessorEditor::resized()
 	const int seq_y = butt_size * 2 + 16;
     m_drag_button.setBounds(m_lane_button_left, seq_y, 24, 24);
     m_play_sequence_button.setBounds(m_lane_button_left + butt_spacing, seq_y, 24, 24);
-    m_sequence_editor.setBounds(m_lane_button_left + butt_spacing*2, seq_y, width-80, 24);
+    m_sequence_editor.setBounds(m_lane_button_left + butt_spacing*2, seq_y, 430, 24);
     m_sequence_length_label.setBounds(m_grid_left + width - 80, seq_y, 80, 24);
 
 }
@@ -450,10 +452,11 @@ void DrummerQueenAudioProcessorEditor::browserRootChanged(const juce::File& newR
 }
 
 namespace {
-    void drag_midi_sequence(std::vector<SequenceItem> const& sequence, DrumData &data)
+    void drag_midi_sequence(std::vector<SequenceItem> const& sequence, DrumData &data, const char *suffix = "")
     {
         juce::File tempDirectory = juce::File::getSpecialLocation(juce::File::tempDirectory);
-        juce::File tempFile = tempDirectory.getChildFile("pattern.midi");
+		std::string filename = "dq_pattern";
+        juce::File tempFile = tempDirectory.getChildFile(std::format("pattern{}.midi", suffix));
         juce::MidiMessageSequence midi_sequence;
         int tpq = 960;
         for (auto p : sequence)
@@ -501,25 +504,43 @@ void PatternButton::paintButton(juce::Graphics& g, bool, bool)
 
 
 
-bool PatternButton::isInterestedInFileDrag(const juce::StringArray&)
+bool PatternButton::isInterestedInFileDrag(const juce::StringArray& files)
 {
-    return true;
+    if (files.size() > 0) {
+        // Avoid dragging onto itself
+        juce::File f(files[0]);
+        if (!f.getFileNameWithoutExtension().endsWith(get_suffix())) {
+            return true;
+        }
+    }
+    return false;
 }
 
 void PatternButton::filesDropped(const juce::StringArray& files, int, int)
 {
     if (files.size() > 0) {
+		// Avoid dragging onto itself
+		juce::File f(files[0]);
+        if (f.getFileNameWithoutExtension().endsWith(get_suffix())) {
+            return;
+        }
         m_editor->drag_onto_pattern(m_pattern, files[0]);
     }
 }
 
-void PatternButton::mouseDrag(const juce::MouseEvent&)
+void PatternButton::mouseDrag(const juce::MouseEvent& event)
 {
+    ToggleButton::mouseDrag(event);
 	auto& pattern = m_editor->data().get_pattern(m_pattern);
 	std::vector<SequenceItem> sequence(1);
     sequence[0].pattern = m_pattern;
     sequence[0].end_beat = pattern.time_signature.beats;
-	drag_midi_sequence(sequence, m_editor->data());
+	drag_midi_sequence(sequence, m_editor->data(), get_suffix().c_str());
+}
+
+std::string PatternButton::get_suffix() const
+{
+    return std::format("_{}", (char)('A' + m_pattern));
 }
 
 void LaneButton::paintButton(juce::Graphics& g, bool shouldDrawButtonAsHighlighted, bool shouldDrawButtonAsDown)
