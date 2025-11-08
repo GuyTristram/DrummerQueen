@@ -112,6 +112,14 @@ namespace
 	}
 }
 
+DrumData::DrumData(DrumDataListener& listener)
+	: m_listener(listener),
+	m_midi_file_directory(juce::File::getSpecialLocation(juce::File::userDocumentsDirectory).getFullPathName().toStdString())
+{
+	load_kits();
+	m_current_pattern_sequence.push_back({ 0.f, 4.f, 0 });
+}
+
 void DrumData::add_drum(std::string name, int note)
 {
 	do_action(
@@ -309,6 +317,43 @@ void DrumData::clear_hits()
 		}
 	}
 	update_events(m_current_pattern);
+}
+
+std::vector<SequenceItem> const& DrumData::get_playing_sequence() const
+{
+	if (m_play_sequence) {
+		return m_sequence;
+	}
+	m_current_pattern_sequence[0].pattern = m_current_pattern;
+	m_current_pattern_sequence[0].end_beat = m_patterns[m_current_pattern].time_signature.beats;
+	return m_current_pattern_sequence;
+}
+
+double DrumData::get_wrapped_time(double time_beats) const
+{
+	auto const& sequence = get_playing_sequence();
+	if (sequence.size() == 0) {
+		return 0.;
+	}
+	double sequence_length_beats = sequence.back().end_beat;
+	return fmod(time_beats, sequence_length_beats);
+}
+
+int DrumData::get_sequence_index(double time_beats) const
+{
+	if (!m_play_sequence) {
+		return 0;
+	}
+	if (m_sequence.size() == 0) {
+		return 0;
+	}
+	double time_wrap = get_wrapped_time(time_beats);
+	for (int seq_index = 0; seq_index < m_sequence.size(); ++seq_index) {
+		if (m_sequence[seq_index].end_beat >= time_wrap) {
+			return seq_index;
+		}
+	}
+	return 0;
 }
 
 

@@ -70,13 +70,7 @@ struct SequenceItem
 class DrumData
 {
 public:
-    DrumData(DrumDataListener &listener)
-		: m_listener(listener),
-		m_midi_file_directory(juce::File::getSpecialLocation(juce::File::userDocumentsDirectory).getFullPathName().toStdString())
-    {
-		load_kits();
-		m_current_pattern_sequence.push_back({ 0.f, 4.f, 0 });
-	}
+    DrumData(DrumDataListener &listener);
 
     void add_drum(std::string name, int note);
 
@@ -109,81 +103,15 @@ public:
 
 	void clear_hits();
 
-	template <typename MB>
-	void get_events(int pattern, double start_time, double end_time, double offset_time, int num_samples, MB& midiMessages)
-	{
-		for (auto& e : m_patterns[pattern].m_events) {
-			if (e.beat_time >= start_time && e.beat_time < end_time) {
-				double time_fraction = (e.beat_time + offset_time - start_time) / (end_time - start_time);
-				auto sample_time = static_cast<int>(time_fraction * num_samples);
-				midiMessages.addEvent(juce::MidiMessage::noteOn(1, e.note, juce::uint8(e.velocity)), sample_time);
-			}
-		}
-	}
-
-	std::vector<SequenceItem> const& get_playing_sequence() const
-	{
-		if (m_play_sequence) {
-			return m_sequence;
-		}
-		m_current_pattern_sequence[0].pattern = m_current_pattern;
-		m_current_pattern_sequence[0].end_beat = m_patterns[m_current_pattern].time_signature.beats;
-		return m_current_pattern_sequence;
-	}
-
-	double get_wrapped_time(double time_beats) const
-	{
-		auto const& sequence = get_playing_sequence();
-		if (sequence.size() == 0) {
-			return 0.;
-		}
-		double sequence_length_beats = sequence.back().end_beat;
-		return fmod(time_beats, sequence_length_beats);
-	}
-
-	int get_sequence_index(double time_beats) const
-	{
-		if (!m_play_sequence) {
-			return 0;
-		}
-		if (m_sequence.size() == 0) {
-			return 0;
-		}
-		double time_wrap = get_wrapped_time(time_beats);
-		for (int seq_index = 0; seq_index < m_sequence.size(); ++seq_index) {
-			if (m_sequence[seq_index].end_beat >= time_wrap) {
-				return seq_index;
-			}
-		}
-		return 0;
-	}
+	std::vector<SequenceItem> const& get_playing_sequence() const;
+	double get_wrapped_time(double time_beats) const;
+	int get_sequence_index(double time_beats) const;
 
 	template <typename MB>
-	void get_events(double start_time, double end_time, int num_samples, MB& midiMessages)
-	{
-		auto const& sequence = get_playing_sequence();
-		if (sequence.size() == 0) {
-			return;
-		}
-		double sequence_length_beats = sequence.back().end_beat;
-		double start_time_wrap = fmod(start_time, sequence_length_beats);
-		double num_wraps = std::floor(start_time / sequence_length_beats);
-		double end_time_wrap = end_time - start_time + start_time_wrap;
-		int seq_index = get_sequence_index(start_time);
+	void get_events(int pattern, double start_time, double end_time, double offset_time, int num_samples, MB& midiMessages);
 
-		double time = start_time;
-		while (time < end_time) {
-			auto& item = sequence[seq_index];
-			get_events(item.pattern, start_time_wrap - item.start_beat, end_time_wrap - item.start_beat, item.start_beat + num_wraps * sequence_length_beats, num_samples, midiMessages);
-			time += item.end_beat - start_time_wrap;
-			seq_index = (seq_index + 1) % sequence.size();
-			if (seq_index == 0) {
-				num_wraps += 1.;
-				start_time_wrap -= sequence_length_beats;
-				end_time_wrap -= sequence_length_beats;
-			}
-		}
-	}
+	template <typename MB>
+	void get_events(double start_time, double end_time, int num_samples, MB& midiMessages);
 
 	std::string to_json() const;
 	void from_json(std::string const& json);
@@ -227,3 +155,43 @@ private:
 	void load_kits();
 
 };
+
+
+template <typename MB>
+inline void DrumData::get_events(int pattern, double start_time, double end_time, double offset_time, int num_samples, MB& midiMessages)
+{
+	for (auto& e : m_patterns[pattern].m_events) {
+		if (e.beat_time >= start_time && e.beat_time < end_time) {
+			double time_fraction = (e.beat_time + offset_time - start_time) / (end_time - start_time);
+			auto sample_time = static_cast<int>(time_fraction * num_samples);
+			midiMessages.addEvent(juce::MidiMessage::noteOn(1, e.note, juce::uint8(e.velocity)), sample_time);
+		}
+	}
+}
+
+template <typename MB>
+inline void DrumData::get_events(double start_time, double end_time, int num_samples, MB& midiMessages)
+{
+	auto const& sequence = get_playing_sequence();
+	if (sequence.size() == 0) {
+		return;
+	}
+	double sequence_length_beats = sequence.back().end_beat;
+	double start_time_wrap = fmod(start_time, sequence_length_beats);
+	double num_wraps = std::floor(start_time / sequence_length_beats);
+	double end_time_wrap = end_time - start_time + start_time_wrap;
+	int seq_index = get_sequence_index(start_time);
+
+	double time = start_time;
+	while (time < end_time) {
+		auto& item = sequence[seq_index];
+		get_events(item.pattern, start_time_wrap - item.start_beat, end_time_wrap - item.start_beat, item.start_beat + num_wraps * sequence_length_beats, num_samples, midiMessages);
+		time += item.end_beat - start_time_wrap;
+		seq_index = (seq_index + 1) % sequence.size();
+		if (seq_index == 0) {
+			num_wraps += 1.;
+			start_time_wrap -= sequence_length_beats;
+			end_time_wrap -= sequence_length_beats;
+		}
+	}
+}
