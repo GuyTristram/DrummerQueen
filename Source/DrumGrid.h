@@ -18,16 +18,6 @@
 */
 class DrumData;
 
-class VelocityButton : public juce::ToggleButton
-{
-public:
-    VelocityButton(int velocity) : m_velocity(velocity) {}
-    void paintButton(juce::Graphics& g,
-        bool	shouldDrawButtonAsHighlighted,
-        bool	shouldDrawButtonAsDown) override;
-    int m_velocity;
-};
-
 class DrumGrid : public juce::Component
 {
 public:

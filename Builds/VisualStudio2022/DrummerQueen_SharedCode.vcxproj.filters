@@ -3387,6 +3387,9 @@
     <ClCompile Include="..\..\Source\share.c">
       <Filter>DrummerQueen\Source</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\Source\CustomButtons.cpp">
+      <Filter>DrummerQueen\Source</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\Source\PluginProcessor.h">
@@ -7278,6 +7281,9 @@
       <Filter>DrummerQueen\Source</Filter>
     </ClInclude>
     <ClInclude Include="..\..\Source\stb_image.h">
+      <Filter>DrummerQueen\Source</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Source\CustomButtons.h">
       <Filter>DrummerQueen\Source</Filter>
     </ClInclude>
   </ItemGroup>

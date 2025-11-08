@@ -8,6 +8,7 @@
 
 #include "DrumGrid.h"
 #include "DrumData.h"
+#include "CustomButtons.h"
 
 DrumGrid::DrumGrid(DrumData& data): m_data(data)
 {
@@ -73,24 +74,6 @@ void DrumGrid::paint(juce::Graphics& g)
 
 }
 
-void draw_note_in_style(juce::Graphics& g, int style, int velocity, float x, float y, float size)
-{
-    float max_size = size - 8.f;
-    float min_size = max_size / 7.f;
-    float size_inside = float(velocity) / 127.f * (max_size - min_size) + min_size;
-    float border = (size - size_inside) / 2.f;
-    if (style == 0) {
-        g.fillEllipse(x + border, y + border, size - border * 2, size - border * 2);
-    }
-    else {
-        border -= 2;
-        juce::Path p;
-        p.startNewSubPath(x + 2, y + border);
-        p.lineTo(x + size - border * 2, y + size / 2);
-        p.lineTo(x + 2, y + size - border);
-        g.fillPath(p);
-    }
-}
 
 void DrumGrid::draw_note(juce::Graphics& g, int lane, int sub_beat, int velocity)
 {
@@ -122,21 +105,3 @@ void DrumGrid::mouseDown(const juce::MouseEvent& event)
     }
     repaint();
 }
-
-void VelocityButton::paintButton(juce::Graphics& g, bool, bool )
-{
-    g.fillAll(juce::Colours::black);
-    if (getToggleState())
-    {
-        g.setColour(juce::Colours::white);
-    }
-    else
-    {
-        g.setColour(juce::Colours::grey);
-    }
-
-	int max_size = std::min(getWidth(), getHeight());
-
-	draw_note_in_style(g, 1, m_velocity, 0.f, 0.f, float(max_size));
-}
-
