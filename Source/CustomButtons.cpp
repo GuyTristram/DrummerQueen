@@ -1,11 +1,3 @@
-/*
-  ==============================================================================
-
-    This file contains the basic framework code for a JUCE plugin editor.
-
-  ==============================================================================
-*/
-
 #include "PluginEditor.h"
 #include "CustomButtons.h"
 #include <format>
@@ -139,12 +131,10 @@ void draw_note_in_style(juce::Graphics& g, int style, int velocity, float x, flo
 void VelocityButton::paintButton(juce::Graphics& g, bool, bool)
 {
     g.fillAll(juce::Colours::black);
-    if (getToggleState())
-    {
+    if (getToggleState()) {
         g.setColour(juce::Colours::white);
     }
-    else
-    {
+    else {
         g.setColour(juce::Colours::grey);
     }
 

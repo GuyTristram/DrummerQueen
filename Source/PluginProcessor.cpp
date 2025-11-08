@@ -1,11 +1,3 @@
-/*
-  ==============================================================================
-
-    This file contains the basic framework code for a JUCE plugin processor.
-
-  ==============================================================================
-*/
-
 #include "PluginProcessor.h"
 #include "PluginEditor.h"
 
@@ -169,19 +161,15 @@ void DrummerQueenAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer,
     m_midi_message_count = 0;
 
     auto head = getPlayHead();
-    if (head)
-    {
+    if (head) {
         auto pos = head->getPosition();
-        if (pos && pos->getIsPlaying())
-        {
+        if (pos && pos->getIsPlaying()) {
             auto beat_pos_begin = pos->getPpqPosition();
-            if (beat_pos_begin)
-            {
+            if (beat_pos_begin) {
                 m_bar_pos_beats = *beat_pos_begin;
 
                 auto bpm = pos->getBpm();
-                if (bpm)
-                {
+                if (bpm) {
                     auto beat_length_seconds = 60. / *bpm;
                     auto buffer_length_beats = buffer_length_seconds / beat_length_seconds;
 					auto sample_length_beats = buffer_length_beats / num_samples;
@@ -198,21 +186,20 @@ void DrummerQueenAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer,
                         }
                     }
 
-
+					// Genetrate outgoing MIDI notes
 					m_data.get_events(*beat_pos_begin, *beat_pos_begin + buffer_length_beats, num_samples, midiMessages);
                 }
                 sendChangeMessage();
             }
         }
-        else
-		{
+        else {
 			m_bar_pos_beats = 0.;
             sendChangeMessage();
         }
     }
 
-    if (m_play_note != -1)
-    {
+	// Play note if requested
+    if (m_play_note != -1){
         midiMessages.addEvent(juce::MidiMessage::noteOn(1, m_play_note, juce::uint8(127)), 0);
         m_play_note = -1;
     }
@@ -221,7 +208,7 @@ void DrummerQueenAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer,
 //==============================================================================
 bool DrummerQueenAudioProcessor::hasEditor() const
 {
-    return true; // (change this to false if you choose to not supply an editor)
+    return true;
 }
 
 juce::AudioProcessorEditor* DrummerQueenAudioProcessor::createEditor()
@@ -238,8 +225,9 @@ void DrummerQueenAudioProcessor::getStateInformation (juce::MemoryBlock& destDat
 
 void DrummerQueenAudioProcessor::setStateInformation (const void* data, int sizeInBytes)
 {
-    if (sizeInBytes == 0)
-		return;
+    if (sizeInBytes == 0) {
+        return;
+    }
 
     std::string state(static_cast<const char*>(data), sizeInBytes);
 	m_data.from_json(state);

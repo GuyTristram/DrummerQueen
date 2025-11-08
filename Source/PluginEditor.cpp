@@ -1,11 +1,3 @@
-/*
-  ==============================================================================
-
-    This file contains the basic framework code for a JUCE plugin editor.
-
-  ==============================================================================
-*/
-
 #include "PluginProcessor.h"
 #include "PluginEditor.h"
 #include <format>
@@ -37,8 +29,7 @@ DrummerQueenAudioProcessorEditor::DrummerQueenAudioProcessorEditor (DrummerQueen
 
 	int velocities[] = { 127, 112, 96, 80, 64, 48, 32, 16 };
     int i = 0;
-    for (auto& vb : m_velocity_buttons)
-    {
+    for (auto& vb : m_velocity_buttons) {
         vb = std::make_unique<VelocityButton>(velocities[i]);
         vb->setRadioGroupId(1);
         vb->onClick = [this, i, v = velocities[i]] {
@@ -49,8 +40,7 @@ DrummerQueenAudioProcessorEditor::DrummerQueenAudioProcessorEditor (DrummerQueen
 	m_velocity_buttons.front()->setToggleState(true, juce::dontSendNotification);
 
     int n_patterns = data().pattern_count();
-    for (int p_index = 0; p_index < n_patterns; ++p_index)
-    {
+    for (int p_index = 0; p_index < n_patterns; ++p_index) {
         m_pattern_buttons.emplace_back(std::make_unique<PatternButton>(this, p_index));
         m_pattern_buttons.back()->onClick = [this, p_index] {set_pattern(p_index, false); };
         m_pattern_buttons.back()->setRadioGroupId(2);
@@ -61,8 +51,7 @@ DrummerQueenAudioProcessorEditor::DrummerQueenAudioProcessorEditor (DrummerQueen
 
 	m_sequence_editor.setText(data().get_sequence_str());
     addAndMakeVisible(m_sequence_editor);
-	m_sequence_editor.onTextChange = [this]
-        {
+	m_sequence_editor.onTextChange = [this] {
             data().set_sequence_str(m_sequence_editor.getText().toStdString());
 			m_sequence_editor.setText(data().get_sequence_str(), juce::dontSendNotification);
 			m_sequence_length_label.setText(std::format("Len: {}", data().sequence_length()), juce::dontSendNotification);
@@ -100,8 +89,7 @@ DrummerQueenAudioProcessorEditor::DrummerQueenAudioProcessorEditor (DrummerQueen
     add_time_signature("3/4 * 2", 6, 4);
     add_time_signature("4/3 * 2", 8, 3);
     select_time_signature();
-    m_time_signature_box.onChange = [this]
-    {
+    m_time_signature_box.onChange = [this] {
         int i = m_time_signature_box.getSelectedId() - 1;
         data().set_time_signature(m_time_signatures[i].beats, m_time_signatures[i].beat_divisions);
         resize_grid();
@@ -110,8 +98,7 @@ DrummerQueenAudioProcessorEditor::DrummerQueenAudioProcessorEditor (DrummerQueen
     addAndMakeVisible(m_time_signature_box);
 
 	auto kit_names = data().get_kit_names();
-	for (int k = 0; k < kit_names.size(); ++k)
-	{
+	for (int k = 0; k < kit_names.size(); ++k) {
 		m_drum_kit_box.addItem(kit_names[k], k + 1);
 	}
 	m_drum_kit_box.setSelectedId(data().get_current_kit() + 1);
@@ -251,14 +238,11 @@ namespace {
         std::set<int> notes;
         std::vector<double> note_on_times;
         auto num_tracks = midi_file.getNumTracks();
-        for (int i = 0; i < num_tracks; ++i)
-        {
+        for (int i = 0; i < num_tracks; ++i) {
             const juce::MidiMessageSequence* track = midi_file.getTrack(i);
-            for (int j = 0; j < track->getNumEvents(); ++j)
-            {
+            for (int j = 0; j < track->getNumEvents(); ++j) {
                 auto& e = track->getEventPointer(j)->message;
-                if (e.isNoteOn())
-                {
+                if (e.isNoteOn()) {
                     int note = e.getNoteNumber();
                     notes.insert(note);
                     note_on_times.push_back((int)e.getTimeStamp());
@@ -291,26 +275,21 @@ namespace {
         pattern.time_signature.beat_divisions = best_divisions;
 
         std::map<int, int> lane_from_note;
-        for (auto note : notes)
-        {
+        for (auto note : notes) {
             pattern.lanes.push_back({ pattern.time_signature.total_divisions() });
             pattern.lanes.back().note = note;
             lane_from_note[note] = (int)pattern.lanes.size() - 1;
         }
 
-        for (int i = 0; i < num_tracks; ++i)
-        {
+        for (int i = 0; i < num_tracks; ++i) {
             const juce::MidiMessageSequence* track = midi_file.getTrack(i);
-            for (int j = 0; j < track->getNumEvents(); ++j)
-            {
+            for (int j = 0; j < track->getNumEvents(); ++j) {
                 auto& e = track->getEventPointer(j)->message;
-                if (e.isNoteOn())
-                {
+                if (e.isNoteOn()) {
                     int note = e.getNoteNumber();
                     int lane = lane_from_note[note];
                     int division = static_cast<int>(pattern.time_signature.beat_divisions * e.getTimeStamp() / ticks_per_beat);
-                    if (division >= 0 && division < pattern.time_signature.total_divisions())
-                    {
+                    if (division >= 0 && division < pattern.time_signature.total_divisions()) {
                         pattern.lanes[lane].velocity[division] = e.getVelocity();
                     }
                 }
@@ -347,12 +326,10 @@ void DrummerQueenAudioProcessorEditor::set_pattern(int index, bool update_button
         m_pattern_buttons[index]->setToggleState(true, juce::dontSendNotification);
     }
     auto const &pattern = data().get_current_pattern();
-    for (auto& pb : m_lane_combo_boxes)
-    {
+    for (auto& pb : m_lane_combo_boxes) {
         removeChildComponent(pb.get());
     }
-    for (auto& pb : m_lane_name_buttons)
-    {
+    for (auto& pb : m_lane_name_buttons) {
         removeChildComponent(pb.get());
     }
 
@@ -365,8 +342,7 @@ void DrummerQueenAudioProcessorEditor::set_pattern(int index, bool update_button
         for (auto const& drum : drums) {
             m_lane_combo_boxes.back()->addItem(drum.name, drum.note);
         }
-        m_lane_combo_boxes.back()->onChange = [this, i]
-        {
+        m_lane_combo_boxes.back()->onChange = [this, i] {
             data().set_lane_note(i, m_lane_combo_boxes[i]->getSelectedId());
             m_lane_name_buttons[i]->setButtonText(m_lane_combo_boxes[i]->getText());
         };
@@ -377,10 +353,8 @@ void DrummerQueenAudioProcessorEditor::set_pattern(int index, bool update_button
         m_lane_name_buttons.push_back(std::make_unique<LaneButton>(data().get_drum_name(pattern.lanes[i].note)));
         m_lane_name_buttons.back()->setBounds(m_lane_button_left, y, m_lane_button_width, 25);
 		m_lane_name_buttons.back()->setConnectedEdges(juce::Button::ConnectedOnLeft | juce::Button::ConnectedOnRight);
-		m_lane_name_buttons.back()->onStateChange = [this, i]
-			{
-				if (m_lane_name_buttons[i]->getState() == juce::Button::buttonDown)
-				{
+		m_lane_name_buttons.back()->onStateChange = [this, i] {
+				if (m_lane_name_buttons[i]->getState() == juce::Button::buttonDown) {
                     audioProcessor.play_note(data().get_current_pattern().lanes[i].note);;
 				}
 			};
@@ -390,10 +364,8 @@ void DrummerQueenAudioProcessorEditor::set_pattern(int index, bool update_button
 	if (data().lane_count() < MAX_LANES) {
 		m_add_lane_button.setButtonText("+");
 		m_add_lane_button.setBounds(m_lane_button_left, y, m_lane_button_width, 25);
-		m_add_lane_button.onClick = [this]
-			{
-				if (data().lane_count() < MAX_LANES)
-				{
+		m_add_lane_button.onClick = [this] {
+				if (data().lane_count() < MAX_LANES) {
 					data().add_drum("Drum", 36);
 					set_pattern(data().get_current_pattern_id(), false);
 					resize_grid();
@@ -403,8 +375,7 @@ void DrummerQueenAudioProcessorEditor::set_pattern(int index, bool update_button
 			};
 		addAndMakeVisible(m_add_lane_button);
 	}
-	else
-	{
+	else {
 		removeChildComponent(&m_add_lane_button);
 	}
     resize_grid();
@@ -425,10 +396,8 @@ void DrummerQueenAudioProcessorEditor::add_time_signature(char const* name, int 
 
 void DrummerQueenAudioProcessorEditor::select_time_signature()
 {
-	for (int i = 0; i < m_time_signatures.size(); ++i)
-	{
-		if (m_time_signatures[i].beats == data().beats() && m_time_signatures[i].beat_divisions == data().beat_divisions())
-		{
+	for (int i = 0; i < m_time_signatures.size(); ++i) {
+		if (m_time_signatures[i].beats == data().beats() && m_time_signatures[i].beat_divisions == data().beat_divisions()) {
 			m_time_signature_box.setSelectedId(i + 1, juce::dontSendNotification);
 			return;
 		}
@@ -454,8 +423,7 @@ void drag_midi_sequence(std::vector<SequenceItem> const& sequence, DrumData &dat
     juce::File tempFile = tempDirectory.getChildFile(std::format("pattern{}.midi", suffix));
     juce::MidiMessageSequence midi_sequence;
     int tpq = 960;
-    for (auto p : sequence)
-    {
+    for (auto p : sequence) {
         auto pattern_length = p.end_beat - p.start_beat;
         data.get_events(p.pattern, 0., pattern_length, p.start_beat, int(pattern_length * tpq), midi_sequence);
     }
@@ -463,8 +431,7 @@ void drag_midi_sequence(std::vector<SequenceItem> const& sequence, DrumData &dat
     midi_file.setTicksPerQuarterNote(tpq);
     midi_file.addTrack(midi_sequence);
     auto stream = tempFile.createOutputStream();
-    if (stream)
-    {
+    if (stream) {
         stream->setPosition(0);
         stream->truncate();
         midi_file.writeTo(*stream);

@@ -1,11 +1,3 @@
-/*
-  ==============================================================================
-
-    This file contains the basic framework code for a JUCE plugin processor.
-
-  ==============================================================================
-*/
-
 #include "DrumGrid.h"
 #include "DrumData.h"
 #include "CustomButtons.h"
@@ -29,16 +21,14 @@ void DrumGrid::paint(juce::Graphics& g)
     g.drawVerticalLine(x_time, 0.f, float(m_lane_height * m_data.lane_count()));
 
     // Draw grid
-    for (int i = 0; i < total_divisions + 1; ++i)
-    {
+    for (int i = 0; i < total_divisions + 1; ++i) {
         if (i % beat_divisions == 0)
             g.setColour({ 255, 255, 255 });
         else
             g.setColour({ 0, 0, 0 });
         g.drawVerticalLine(i * m_note_width, 0.f, float(m_lane_height * m_data.lane_count()));
     }
-    for (int i = 0; i < m_data.lane_count() + 1; ++i)
-    {
+    for (int i = 0; i < m_data.lane_count() + 1; ++i) {
         g.setColour({ 255, 255, 255 });
         g.drawHorizontalLine(i * m_lane_height, 0.f, float(m_note_width * total_divisions));
     }
@@ -46,13 +36,10 @@ void DrumGrid::paint(juce::Graphics& g)
     // Draw notes
     g.setColour({ 255, 255, 255 });
     int x = 0, y = 0;
-    for (int lane = 0; lane <  m_data.lane_count(); ++lane)
-    {
-        for (int sub_beat = 0; sub_beat < m_data.total_divisions(); ++sub_beat)
-        {
+    for (int lane = 0; lane <  m_data.lane_count(); ++lane) {
+        for (int sub_beat = 0; sub_beat < m_data.total_divisions(); ++sub_beat) {
 			int v = m_data.get_hit(lane, sub_beat);
-            if (v > 0)
-            {
+            if (v > 0) {
                 const auto p = wrapped_pos * m_data.beat_divisions();
 				bool in_play_position = sub_beat < p && sub_beat + 1 > p;
                 if (m_position == 0) {
@@ -86,19 +73,15 @@ void DrumGrid::mouseDown(const juce::MouseEvent& event)
 {
     auto pos = event.getMouseDownPosition();
     const int lane = pos.getY() / m_lane_height;
-    if (lane >= 0 && lane < m_data.lane_count())
-    {
+    if (lane >= 0 && lane < m_data.lane_count()) {
         int beat = pos.getX() / m_note_width;
-        if (beat >= 0 && beat < m_data.total_divisions())
-        {
-			if (event.mods.isLeftButtonDown())
-			{
+        if (beat >= 0 && beat < m_data.total_divisions()) {
+			if (event.mods.isLeftButtonDown()) {
                 const int current_vel = m_data.get_hit(lane, beat);
                 const int new_vel = current_vel != m_new_velocity ? m_new_velocity : 0;
                 m_data.set_hit(lane, beat, new_vel);
             }
-			else if (event.mods.isMiddleButtonDown())
-			{
+			else if (event.mods.isMiddleButtonDown()) {
 				m_data.set_hit(lane, beat, 0);
 			}
          }

@@ -128,8 +128,7 @@ void DrumData::add_drum(std::string name, int note)
 
 void DrumData::set_current_pattern(int pattern) 
 {
-	if (pattern < 0 || pattern >= m_patterns.size())
-	{
+	if (pattern < 0 || pattern >= m_patterns.size()) {
 		return;
 	}
 	m_current_pattern = pattern;
@@ -142,35 +141,30 @@ void DrumData::set_pattern(int pattern_index, DrumPattern const& pattern)
 	}
 
 	do_action(
-		[this, pattern_index, pattern]
-		{
+		[this, pattern_index, pattern] {
 			m_patterns[pattern_index] = pattern;
 			update_events();
 		},
 		[this, pattern_index, old_pattern = m_patterns[pattern_index]]
-		{
-			m_patterns[pattern_index] = old_pattern;
+		{ m_patterns[pattern_index] = old_pattern;
 			update_events();
 		});
 }
 
 void DrumData::set_lane_note(int lane, int note)
 {
-	if (lane < 0 || lane >= lane_count())
-	{
+	if (lane < 0 || lane >= lane_count()) {
 		return;
 	}
 
 	int pattern = m_current_pattern;
 	int old_note = m_patterns[pattern].lanes[lane].note;
 	do_action(
-		[this, pattern, lane, note]
-		{
+		[this, pattern, lane, note] {
 			m_patterns[pattern].lanes[lane].note = note;
 			update_events();
 		},
-		[this, pattern, lane, old_note]
-		{
+		[this, pattern, lane, old_note] {
 			m_patterns[pattern].lanes[lane].note = old_note;
 			update_events();
 		});
@@ -181,27 +175,21 @@ void DrumData::set_sequence_str(std::string const& sequence)
 	m_sequence_str.clear();
 	m_sequence_length = 0;
 	m_sequence.clear();
-	for (auto c : sequence)
-	{
-		if (isalpha(c))
-		{
+	for (auto c : sequence) {
+		if (isalpha(c)) {
 			c = char(toupper(c));
-			if (c - 'A' < m_patterns.size())
-			{
+			if (c - 'A' < m_patterns.size()) {
 				m_sequence_str.push_back(c);
 			}
 		}
-		else if (isdigit(c) || c == '(' || c == ')')
-		{
+		else if (isdigit(c) || c == '(' || c == ')') {
 			m_sequence_str.push_back(c);
 		}
 	}
 	const char* c = m_sequence_str.c_str();
-	if (validate(c))
-	{
+	if (validate(c)) {
 		auto len = count_seq(c);
-		if (len < 10000)
-		{
+		if (len < 10000) {
 			m_sequence_length = int(len);
 			c = m_sequence_str.c_str();
 			m_sequence = parse_seq(c, m_patterns);
@@ -228,8 +216,7 @@ void DrumData::set_time_signature(int new_beats, int new_beat_divisions)
 	int old_beats = beats();
 	int old_beat_divisions = beat_divisions();
 	do_action(
-		[this, new_beats, new_beat_divisions, pattern_id = m_current_pattern]
-		{
+		[this, new_beats, new_beat_divisions, pattern_id = m_current_pattern] {
 			auto& pattern = m_patterns[pattern_id];
 			pattern.time_signature.beats = new_beats;
 			pattern.time_signature.beat_divisions = new_beat_divisions;
@@ -240,8 +227,7 @@ void DrumData::set_time_signature(int new_beats, int new_beat_divisions)
 			update_sequence();
 			update_events();
 		},
-		[this, old_beats, old_beat_divisions, old_pattern = m_patterns[m_current_pattern], pattern_id = m_current_pattern]
-		{
+		[this, old_beats, old_beat_divisions, old_pattern = m_patterns[m_current_pattern], pattern_id = m_current_pattern] {
 			m_patterns[pattern_id] = old_pattern;
 			update_sequence();
 			update_events();
@@ -262,8 +248,7 @@ int DrumData::lane_count() const
 std::vector<std::string> DrumData::get_kit_names() const
 {
 	std::vector<std::string> kit_names;
-	for (auto& kit : m_kits)
-	{
+	for (auto& kit : m_kits) {
 		kit_names.push_back(kit.name);
 	}
 	return kit_names;
@@ -276,18 +261,14 @@ std::vector<DrumInfo> const &DrumData::get_current_kit_drums() const
 
 std::string DrumData::get_drum_name(int note) const
 {
-	for (int i = 0; i < m_kits[m_current_kit].drums.size(); ++i)
-	{
-		if (m_kits[m_current_kit].drums[i].note == note)
-		{
+	for (int i = 0; i < m_kits[m_current_kit].drums.size(); ++i) {
+		if (m_kits[m_current_kit].drums[i].note == note) {
 			return m_kits[m_current_kit].drums[i].name;
 		}
 	}
 
-	for (int i = 0; i < m_kits[0].drums.size(); ++i)
-	{
-		if (m_kits[0].drums[i].note == note)
-		{
+	for (int i = 0; i < m_kits[0].drums.size(); ++i) {
+		if (m_kits[0].drums[i].note == note) {
 			return m_kits[0].drums[i].name + "*";
 		}
 	}
@@ -296,8 +277,7 @@ std::string DrumData::get_drum_name(int note) const
 
 void DrumData::update_events()
 {
-	for (int i = 0; i < m_patterns.size(); ++i)
-	{
+	for (int i = 0; i < m_patterns.size(); ++i) {
 		update_events(i);
 	}
 }
@@ -306,13 +286,11 @@ void DrumData::set_hit(int lane, int division, int velocity)
 {
 	int old_velocity = m_patterns[m_current_pattern].lanes[lane].velocity[division];
 	do_action(
-		[this, lane, division, velocity, pattern = m_current_pattern]
-		{
+		[this, lane, division, velocity, pattern = m_current_pattern] {
 			m_patterns[pattern].lanes[lane].velocity[division] = velocity;
 			update_events(pattern);
 		},
-		[this, lane, division, old_velocity, pattern = m_current_pattern]
-		{
+		[this, lane, division, old_velocity, pattern = m_current_pattern] {
 			m_patterns[pattern].lanes[lane].velocity[division] = old_velocity;
 			update_events(pattern);
 		});
@@ -325,10 +303,8 @@ int DrumData::get_hit(int lane, int division) const
 
 void DrumData::clear_hits()
 {
-	for (auto& lane : m_patterns[m_current_pattern].lanes)
-	{
-		for (auto& v : lane.velocity)
-		{
+	for (auto& lane : m_patterns[m_current_pattern].lanes) {
+		for (auto& v : lane.velocity) {
 			v = 0;
 		}
 	}
@@ -347,14 +323,12 @@ std::string DrumData::to_json() const
 	j["play_sequence"] = m_play_sequence;
 	j["current_pattern"] = m_current_pattern;
 	j["current_kit"] = m_kits[m_current_kit].name;
-	for (auto& pattern : m_patterns)
-	{
+	for (auto& pattern : m_patterns) {
 		json p;
 		p["beats"] = pattern.time_signature.beats;
 		p["beat_divisions"] = pattern.time_signature.beat_divisions;
 		p["lanes"] = json::array();
-		for (auto& lane : pattern.lanes)
-		{
+		for (auto& lane : pattern.lanes) {
 			json l;
 			l["note"] = lane.note;
 			l["velocity"] = lane.velocity;
@@ -373,8 +347,7 @@ void DrumData::from_json(std::string const& json_string)
 	int version = j.value("version", 0);
 	int beats = 4;
 	int beat_divisions = 4;
-	if (version < 3)
-	{
+	if (version < 3) {
 		beats = j["beats"];
 		beat_divisions = j["beat_divisions"];
 	}
@@ -382,20 +355,16 @@ void DrumData::from_json(std::string const& json_string)
 	m_midi_file_directory = j.value("midi_file_directory", user_doc_dir);
 	m_swing = j["swing"];
 	DrumKit kit;
-	if (version < 1)
-	{
+	if (version < 1) {
 		kit.name = j["kit"]["name"];
-		kit.drums.clear();
-		for (auto& d : j["kit"]["drums"])
+		kit.drums.clear(); for (auto& d : j["kit"]["drums"])
 		{
 			kit.drums.emplace_back(d["note"], d["name"]);
 		}
 	}
 	auto current_kit_name = j.value("current_kit", "General MIDI");
-	for (int i = 0; i < m_kits.size(); ++i)
-	{
-		if (m_kits[i].name == current_kit_name)
-		{
+	for (int i = 0; i < m_kits.size(); ++i) {
+		if (m_kits[i].name == current_kit_name) {
 			m_current_kit = i;
 			break;
 		}
@@ -403,33 +372,26 @@ void DrumData::from_json(std::string const& json_string)
 	m_play_sequence = j.value("play_sequence", false);
 	m_current_pattern = j.value("current_pattern", 0);
 	int pattern_count = 0;
-	for (auto& p : j["patterns"])
-	{
+	for (auto& p : j["patterns"]) {
 		DrumPattern pattern;
-		if (version < 3)
-		{
+		if (version < 3) {
 			pattern.time_signature.beats = beats;
 			pattern.time_signature.beat_divisions = beat_divisions;
 		}
-		else
-		{
+		else {
 			pattern.time_signature.beats = p["beats"];
 			pattern.time_signature.beat_divisions = p["beat_divisions"];
 		}
-		for (auto& l : p["lanes"])
-		{
+		for (auto& l : p["lanes"]) {
 			DrumLane lane(0);
-			if (version < 1)
-			{
+			if (version < 1) {
 				lane.note = kit.drums[pattern.lanes.size()].note;
 			}
-			else
-			{
+			else {
 				lane.note = l["note"];
 			}
 
-			for (auto v : l["velocity"])
-			{
+			for (auto v : l["velocity"]) {
 				lane.velocity.push_back(v);
 			}
 			pattern.lanes.push_back(lane);
@@ -449,20 +411,15 @@ void DrumData::update_events(int pattern_id)
 	double swing_adjust1 = (0.5 - m_swing) * 2. * beat_from_division;
 	double swing_adjust2 = -swing_adjust1;
 	auto& lanes = pattern.lanes;
-	for (int division = 0; division < pattern.time_signature.total_divisions(); ++division)
-	{
-		for (int lane = 0; lane < lanes.size(); ++lane)
-		{
-			if (lanes[lane].velocity[division] > 0)
-			{
+	for (int division = 0; division < pattern.time_signature.total_divisions(); ++division) {
+		for (int lane = 0; lane < lanes.size(); ++lane) {
+			if (lanes[lane].velocity[division] > 0) {
 				DrumEvent e;
 				e.beat_time = beat_from_division * division;
-				if (division % 4 == 1)
-				{
+				if (division % 4 == 1) {
 					e.beat_time += swing_adjust2;
 				}
-				if (division % 4 == 3)
-				{
+				if (division % 4 == 3) {
 					e.beat_time += swing_adjust1;
 				}
 				e.note = lanes[lane].note;
@@ -485,8 +442,7 @@ void DrumData::do_action(std::function<void()> do_action, std::function<void()> 
 
 void DrumData::undo()
 {
-	if (m_undo_stack.empty())
-	{
+	if (m_undo_stack.empty()) {
 		return;
 	}
 	auto action = m_undo_stack.back();
@@ -497,8 +453,7 @@ void DrumData::undo()
 
 void DrumData::redo()
 {
-	if (m_redo_stack.empty())
-	{
+	if (m_redo_stack.empty()) {
 		return;
 	}
 	auto action = m_redo_stack.back();
@@ -532,12 +487,10 @@ void DrumData::load_kits()
 	}
 	nlohmann::json j;
 	in >> j;
-	for (auto& k : j)
-	{
+	for (auto& k : j) {
 		DrumKit kit;
 		kit.name = k["name"];
-		for (auto& d : k["drums"])
-		{
+		for (auto& d : k["drums"]) {
 			kit.drums.emplace_back(d["note"], d["name"]);
 		}
 		m_kits.push_back(kit);
