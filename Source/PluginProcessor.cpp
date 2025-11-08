@@ -160,49 +160,53 @@ void DrummerQueenAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer,
 
     m_midi_message_count = 0;
 
-    auto head = getPlayHead();
-    if (head) {
-        auto pos = head->getPosition();
-        if (pos && pos->getIsPlaying()) {
-            auto beat_pos_begin = pos->getPpqPosition();
-            if (beat_pos_begin) {
-                m_bar_pos_beats = *beat_pos_begin;
-
-                auto bpm = pos->getBpm();
-                if (bpm) {
-                    auto beat_length_seconds = 60. / *bpm;
-                    auto buffer_length_beats = buffer_length_seconds / beat_length_seconds;
-					auto sample_length_beats = buffer_length_beats / num_samples;
-
-                    // Record incoming MIDI notes
-                    for (const auto& e : midiMessages) {
-                        auto message = e.getMessage();
-                        if (message.isNoteOn()) {
-                            double beat_time = *beat_pos_begin + (double)e.samplePosition * sample_length_beats;
-                            m_midi_messages[m_midi_message_count++] = DrumEvent{ beat_time, message.getNoteNumber(), message.getVelocity() };
-                            if (m_midi_message_count >= MAX_MIDI_MESSAGES) {
-                                break;
-                            }
-                        }
-                    }
-
-					// Genetrate outgoing MIDI notes
-					m_data.get_events(*beat_pos_begin, *beat_pos_begin + buffer_length_beats, num_samples, midiMessages);
-                }
-                sendChangeMessage();
-            }
-        }
-        else {
-			m_bar_pos_beats = 0.;
-            sendChangeMessage();
-        }
-    }
-
-	// Play note if requested
-    if (m_play_note != -1){
+    // Play note if requested
+    if (m_play_note != -1) {
         midiMessages.addEvent(juce::MidiMessage::noteOn(1, m_play_note, juce::uint8(127)), 0);
         m_play_note = -1;
     }
+
+    sendChangeMessage();
+
+    m_bar_pos_beats = 0.;
+
+    auto head = getPlayHead();
+    if (!head) {
+        return;
+    }
+    auto pos = head->getPosition();
+    if (!pos || !pos->getIsPlaying()) {
+        return;
+    }
+    auto beat_pos_begin = pos->getPpqPosition();
+    if (!beat_pos_begin) {
+        return;
+    }
+
+    m_bar_pos_beats = *beat_pos_begin;
+
+    auto bpm = pos->getBpm();
+    if (bpm) {
+        auto beat_length_seconds = 60. / *bpm;
+        auto buffer_length_beats = buffer_length_seconds / beat_length_seconds;
+		auto sample_length_beats = buffer_length_beats / num_samples;
+
+        // Record incoming MIDI notes
+        for (const auto& e : midiMessages) {
+            auto message = e.getMessage();
+            if (message.isNoteOn()) {
+                double beat_time = *beat_pos_begin + (double)e.samplePosition * sample_length_beats;
+                m_midi_messages[m_midi_message_count++] = DrumEvent{ beat_time, message.getNoteNumber(), message.getVelocity() };
+                if (m_midi_message_count >= MAX_MIDI_MESSAGES) {
+                    break;
+                }
+            }
+        }
+
+		// Genetrate outgoing MIDI notes
+		m_data.get_events(*beat_pos_begin, *beat_pos_begin + buffer_length_beats, num_samples, midiMessages);
+    }
+
 }
 
 //==============================================================================

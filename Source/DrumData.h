@@ -109,7 +109,6 @@ public:
 
 	template <typename MB>
 	void get_events(int pattern, double start_time, double end_time, double offset_time, int num_samples, MB& midiMessages);
-
 	template <typename MB>
 	void get_events(double start_time, double end_time, int num_samples, MB& midiMessages);
 
@@ -128,6 +127,7 @@ public:
 	std::string get_drum_name(int note) const;
 	static const int NUM_PATTERNS = 16;
 	using PatternArray = std::array<DrumPattern, NUM_PATTERNS>;
+
 private:
 	void update_events();
 	void update_events(int pattern);
@@ -142,7 +142,6 @@ private:
 	bool m_play_sequence = false;
 	int m_sequence_length = 0;
 
-
 	DrumDataListener& m_listener;
 
 	std::vector<Action> m_undo_stack;
@@ -156,6 +155,11 @@ private:
 
 };
 
+///////////////////////////////////////////////////////////////////////////////////////////////////
+//
+// Template Impementations
+//
+///////////////////////////////////////////////////////////////////////////////////////////////////
 
 template <typename MB>
 inline void DrumData::get_events(int pattern, double start_time, double end_time, double offset_time, int num_samples, MB& midiMessages)
