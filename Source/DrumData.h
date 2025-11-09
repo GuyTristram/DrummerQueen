@@ -92,6 +92,9 @@ public:
     int beat_divisions() const { return m_patterns[m_current_pattern].time_signature.beat_divisions; }
 	int total_divisions() const { return m_patterns[m_current_pattern].time_signature.total_divisions(); }
 	void set_time_signature(int beats, int beat_divisions);
+	void set_hit_at_time(double beat_time, int note, int velocity);
+
+
 	int pattern_count() const { return (int)m_patterns.size(); }
 
 	void set_swing(float swing);

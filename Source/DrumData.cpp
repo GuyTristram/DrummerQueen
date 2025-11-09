@@ -242,6 +242,27 @@ void DrumData::set_time_signature(int new_beats, int new_beat_divisions)
 		});
 }
 
+void DrumData::set_hit_at_time(double beat_time, int note, int velocity)
+{
+	auto& pattern = m_patterns[m_current_pattern];
+	int division = static_cast<int>(std::round(beat_time * pattern.time_signature.beat_divisions)) % pattern.time_signature.total_divisions();
+	for (int lane = 0; lane < pattern.lanes.size(); ++lane) {
+		if (pattern.lanes[lane].note == note) {
+			int old_velocity = pattern.lanes[lane].velocity[division];
+			do_action(
+				[this, lane, division, velocity, pattern_id = m_current_pattern] {
+					m_patterns[pattern_id].lanes[lane].velocity[division] = velocity;
+					update_events(pattern_id);
+				},
+				[this, lane, division, old_velocity, pattern_id = m_current_pattern] {
+					m_patterns[pattern_id].lanes[lane].velocity[division] = old_velocity;
+					update_events(pattern_id);
+				});
+			return;
+		}
+	}
+}
+
 void DrumData::set_swing(float swing)
 {
 	m_swing = swing;

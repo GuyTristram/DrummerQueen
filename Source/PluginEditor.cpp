@@ -205,7 +205,12 @@ void DrummerQueenAudioProcessorEditor::mouseWheelMove(const juce::MouseEvent&, c
 
 void DrummerQueenAudioProcessorEditor::changeListenerCallback(juce::ChangeBroadcaster*)
 {
-	auto bar_pos_beats = audioProcessor.barPos();
+	auto midi_events = audioProcessor.get_recorded_midi();
+	for (auto& e : midi_events) {
+		data().set_hit_at_time(e.beat_time, e.note, e.velocity);
+	}
+    
+    auto bar_pos_beats = audioProcessor.barPos();
     m_grid.set_position(bar_pos_beats);
     if (bar_pos_beats > 0.f && data().is_playing_sequence()) {
         auto index = data().get_sequence_index(bar_pos_beats);
