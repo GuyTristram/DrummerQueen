@@ -57,9 +57,13 @@ private:
     juce::TextButton m_undo_button;
     juce::TextButton m_redo_button;
 
+    juce::TextButton m_clear_notes_button;
+    juce::TextButton m_clear_all_button;
+
     juce::TextEditor m_sequence_editor;
 	juce::Label m_sequence_length_label;
 	juce::ToggleButton m_play_sequence_button;
+    juce::TextEditor m_bpm_editor;
 
     int m_velocity = 127;
 

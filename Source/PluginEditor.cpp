@@ -4,11 +4,6 @@
 #include "json.hpp"
 #include "share.c"
 
-namespace
-{
-const int MAX_LANES = 12;
-const int MAX_DIVISIONS = 32;
-}
 //==============================================================================
 DrummerQueenAudioProcessorEditor::DrummerQueenAudioProcessorEditor (DrummerQueenAudioProcessor& p)
 	: AudioProcessorEditor(&p), audioProcessor(p), m_grid(p.m_data),
@@ -70,6 +65,18 @@ DrummerQueenAudioProcessorEditor::DrummerQueenAudioProcessorEditor (DrummerQueen
     addAndMakeVisible(m_redo_button);
     m_redo_button.onClick = [this] {data().redo(); set_pattern(data().get_current_pattern_id());  m_grid.repaint(); resize_grid(); };
 
+    m_clear_notes_button.setButtonText("Clear Hits");
+    m_clear_notes_button.setConnectedEdges(juce::Button::ConnectedOnRight);
+    addAndMakeVisible(m_clear_notes_button);
+    m_clear_notes_button.onClick = [this] {data().clear_hits(); m_grid.repaint(); };
+
+    m_clear_all_button.setButtonText("Clear All");
+    m_clear_all_button.setConnectedEdges(juce::Button::ConnectedOnLeft);
+    addAndMakeVisible(m_clear_all_button);
+    m_clear_all_button.onClick = [this] {data().clear_all(); set_pattern(data().get_current_pattern_id());  m_grid.repaint(); };
+
+
+
 	// TODO: decide whether to keep swing
     if (false) {
         m_swing_slider.setSliderStyle(juce::Slider::LinearHorizontal);
@@ -122,7 +129,7 @@ DrummerQueenAudioProcessorEditor::DrummerQueenAudioProcessorEditor (DrummerQueen
 	addAndMakeVisible(m_file_list);
 	m_file_list.setRoot(juce::File(data().m_midi_file_directory));
 	m_file_list.addListener(this);
-
+    addAndMakeVisible(m_bpm_editor);
     layout_components();
     setSize(1124, 448);
     audioProcessor.addChangeListener(this);
@@ -159,6 +166,8 @@ void DrummerQueenAudioProcessorEditor::layout_components()
 
 	m_undo_button.setBounds(m_lane_button_left, 8, 40, 24);
 	m_redo_button.setBounds(m_lane_button_left + 40, 8, 40, 24);
+	m_clear_notes_button.setBounds(m_lane_button_left, 8 + 26, 60, 24);
+	m_clear_all_button.setBounds(m_clear_notes_button.getRight(), 8 + 26, 60, 24);
 
     const int butt_size = 24;
     const int butt_spacing = butt_size + 2;
@@ -171,6 +180,8 @@ void DrummerQueenAudioProcessorEditor::layout_components()
         pb->setBounds(butt_spacing * (i % butt_per_line), butt_spacing * (i / butt_per_line), butt_size, butt_size);
         ++i;
     }
+
+	m_bpm_editor.setBounds(m_pattern_button_parent.getRight() + 8, 8, 80, 24);
 
     int x = m_grid_left;
     for (auto& vb : m_velocity_buttons) {
@@ -209,7 +220,7 @@ void DrummerQueenAudioProcessorEditor::changeListenerCallback(juce::ChangeBroadc
 	for (auto& e : midi_events) {
 		data().set_hit_at_time(e.beat_time, e.note, e.velocity);
 	}
-    
+	m_bpm_editor.setText(std::format("{:.2f}", audioProcessor.bpm()), juce::dontSendNotification);
     auto bar_pos_beats = audioProcessor.barPos();
     m_grid.set_position(bar_pos_beats);
     if (bar_pos_beats > 0.f && data().is_playing_sequence()) {

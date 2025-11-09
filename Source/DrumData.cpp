@@ -261,6 +261,19 @@ void DrumData::set_hit_at_time(double beat_time, int note, int velocity)
 			return;
 		}
 	}
+	if (pattern.lanes.size() < MAX_LANES) {
+		do_action(
+			[this, note, division, velocity, pattern_id = m_current_pattern] {
+				m_patterns[pattern_id].lanes.emplace_back(m_patterns[pattern_id].time_signature.total_divisions());
+				m_patterns[pattern_id].lanes.back().note = note;
+				m_patterns[pattern_id].lanes.back().velocity[division] = velocity;
+				update_events(pattern_id);
+			},
+			[this, pattern_id = m_current_pattern] {
+				m_patterns[pattern_id].lanes.pop_back();
+				update_events(pattern_id);
+			});
+	}
 }
 
 void DrumData::set_swing(float swing)
@@ -301,7 +314,7 @@ std::string DrumData::get_drum_name(int note) const
 			return m_kits[0].drums[i].name + "*";
 		}
 	}
-	return std::string();
+	return std::format("{}", note);
 }
 
 void DrumData::update_events()
@@ -332,12 +345,32 @@ int DrumData::get_hit(int lane, int division) const
 
 void DrumData::clear_hits()
 {
-	for (auto& lane : m_patterns[m_current_pattern].lanes) {
-		for (auto& v : lane.velocity) {
-			v = 0;
-		}
-	}
-	update_events(m_current_pattern);
+	do_action(
+		[this, pattern = m_current_pattern] {
+			for (auto& lane : m_patterns[pattern].lanes) {
+				for (auto& v : lane.velocity) {
+					v = 0;
+				}
+			}
+			update_events(pattern);
+		},
+		[this, pattern_id = m_current_pattern, pattern = m_patterns[m_current_pattern]] {
+			m_patterns[pattern_id] = pattern;
+			update_events(pattern_id);
+		});
+}
+
+void DrumData::clear_all()
+{
+	do_action(
+		[this, pattern = m_current_pattern] {
+			m_patterns[pattern].lanes.clear();
+			update_events(pattern);
+		},
+		[this, pattern_id = m_current_pattern, pattern = m_patterns[m_current_pattern]] {
+			m_patterns[pattern_id] = pattern;
+			update_events(pattern_id);
+		});
 }
 
 std::vector<SequenceItem> const& DrumData::get_playing_sequence() const

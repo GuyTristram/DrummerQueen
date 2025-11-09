@@ -173,6 +173,11 @@ void DrummerQueenAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer,
         return;
     }
     auto pos = head->getPosition();
+
+	if (pos && pos->getBpm()) {
+		m_bpm = *pos->getBpm();
+	}
+
     if (!pos || !pos->getIsPlaying()) {
         sendChangeMessage();
         return;
@@ -187,7 +192,8 @@ void DrummerQueenAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer,
 
     auto bpm = pos->getBpm();
     if (bpm) {
-        auto beat_length_seconds = 60. / *bpm;
+		m_bpm = *bpm;
+        auto beat_length_seconds = 60. / m_bpm;
         auto buffer_length_beats = buffer_length_seconds / beat_length_seconds;
 		auto sample_length_beats = buffer_length_beats / num_samples;
 

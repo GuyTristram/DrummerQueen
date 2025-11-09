@@ -7,6 +7,9 @@
 #include <string>
 #include <fstream>
 
+const int MAX_LANES = 12;
+const int MAX_DIVISIONS = 32;
+
 struct DrumInfo
 {
 	int note;
@@ -105,6 +108,7 @@ public:
 	int get_hit(int lane, int division) const;
 
 	void clear_hits();
+	void clear_all();
 
 	std::vector<SequenceItem> const& get_playing_sequence() const;
 	double get_wrapped_time(double time_beats) const;

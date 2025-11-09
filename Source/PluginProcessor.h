@@ -47,6 +47,7 @@ public:
     void setStateInformation (const void* data, int sizeInBytes) override;
 
     double barPos() const { return m_bar_pos_beats; }
+	double bpm() const { return m_bpm; }
 
 	void changed() override { }
 
@@ -62,10 +63,12 @@ public:
 
 private:
     double m_bar_pos_beats = -1.;
+	double m_bpm = 120.;
     juce::AudioParameterFloat* m_swing;
 	int m_play_note = -1;
 	static constexpr int MAX_MIDI_MESSAGES = 32;
 	std::vector<DrumEvent> m_midi_messages;
+    bool m_recording = false;
 
     //==============================================================================
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (DrummerQueenAudioProcessor)
