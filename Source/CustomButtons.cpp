@@ -95,6 +95,7 @@ DragButton::DragButton()
             img.setPixelAt(ix, iy, c);
         }
     }
+	stbi_image_free(share_img);
 	setImages(false, true, true,
 		img, 1.f, juce::Colours::transparentBlack,
 		img, 1.f, juce::Colours::transparentBlack,
