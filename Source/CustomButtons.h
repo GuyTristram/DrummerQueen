@@ -65,3 +65,11 @@ public:
         bool	shouldDrawButtonAsDown) override;
     int m_velocity;
 };
+
+class RecordButton : public juce::ToggleButton
+{
+public:
+    void paintButton(juce::Graphics& g,
+        bool	shouldDrawButtonAsHighlighted,
+        bool	shouldDrawButtonAsDown) override;
+};

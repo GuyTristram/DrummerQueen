@@ -198,14 +198,16 @@ void DrummerQueenAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer,
 		auto sample_length_beats = buffer_length_beats / num_samples;
 
         // Record incoming MIDI notes
-        for (const auto& e : midiMessages) {
-            auto message = e.getMessage();
-            if (message.isNoteOn()) {
-                double beat_time = *beat_pos_begin + (double)e.samplePosition * sample_length_beats;
-                if (m_midi_messages.size() >= m_midi_messages.capacity()) {
-                    break;
+        if (m_recording) {
+            for (const auto& e : midiMessages) {
+                auto message = e.getMessage();
+                if (message.isNoteOn()) {
+                    double beat_time = *beat_pos_begin + (double)e.samplePosition * sample_length_beats;
+                    if (m_midi_messages.size() >= m_midi_messages.capacity()) {
+                        break;
+                    }
+                    m_midi_messages.emplace_back(beat_time, message.getNoteNumber(), message.getVelocity());
                 }
-                m_midi_messages.emplace_back(beat_time, message.getNoteNumber(), message.getVelocity());
             }
         }
 

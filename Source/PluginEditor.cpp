@@ -129,7 +129,12 @@ DrummerQueenAudioProcessorEditor::DrummerQueenAudioProcessorEditor (DrummerQueen
 	addAndMakeVisible(m_file_list);
 	m_file_list.setRoot(juce::File(data().m_midi_file_directory));
 	m_file_list.addListener(this);
-    addAndMakeVisible(m_bpm_editor);
+
+	m_record_button.onStateChange = [this]() {
+		audioProcessor.recording(m_record_button.getToggleState());
+		};
+    addAndMakeVisible(m_record_button);
+
     layout_components();
     setSize(1124, 448);
     audioProcessor.addChangeListener(this);
@@ -181,7 +186,7 @@ void DrummerQueenAudioProcessorEditor::layout_components()
         ++i;
     }
 
-	m_bpm_editor.setBounds(m_pattern_button_parent.getRight() + 8, 8, 80, 24);
+    m_record_button.setBounds(m_pattern_button_parent.getRight() + 8, 8, 48, 48);
 
     int x = m_grid_left;
     for (auto& vb : m_velocity_buttons) {

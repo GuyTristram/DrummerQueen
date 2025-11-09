@@ -65,6 +65,8 @@ private:
 	juce::ToggleButton m_play_sequence_button;
     juce::TextEditor m_bpm_editor;
 
+	RecordButton m_record_button;
+
     int m_velocity = 127;
 
 	juce::ComboBox m_time_signature_box;

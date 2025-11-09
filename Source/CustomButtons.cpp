@@ -144,3 +144,16 @@ void VelocityButton::paintButton(juce::Graphics& g, bool, bool)
     draw_note_in_style(g, 1, m_velocity, 0.f, 0.f, float(max_size));
 }
 
+void RecordButton::paintButton(juce::Graphics& g, bool shouldDrawButtonAsHighlighted, bool shouldDrawButtonAsDown)
+{
+    const int size = std::min(getWidth(), getHeight());
+    if (getToggleState()) {
+        g.setColour(juce::Colours::red);
+    }
+    else {
+        g.setColour(juce::Colours::green);
+    }
+    const int border = 4;
+    g.fillEllipse(border, border, size - border * 2, size - border * 2);
+
+}

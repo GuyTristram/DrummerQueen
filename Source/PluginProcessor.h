@@ -61,6 +61,8 @@ public:
 
     DrumData m_data;
 
+	void recording(bool r) { m_recording = r; }
+
 private:
     double m_bar_pos_beats = -1.;
 	double m_bpm = 120.;
