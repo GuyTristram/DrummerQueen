@@ -242,7 +242,7 @@ void DrumData::set_time_signature(int new_beats, int new_beat_divisions)
 		});
 }
 
-void DrumData::set_hit_at_time(double beat_time, int note, int velocity)
+bool DrumData::set_hit_at_time(double beat_time, int note, int velocity)
 {
 	auto& pattern = m_patterns[m_current_pattern];
 	int division = static_cast<int>(std::round(beat_time * pattern.time_signature.beat_divisions)) % pattern.time_signature.total_divisions();
@@ -258,7 +258,7 @@ void DrumData::set_hit_at_time(double beat_time, int note, int velocity)
 					m_patterns[pattern_id].lanes[lane].velocity[division] = old_velocity;
 					update_events(pattern_id);
 				});
-			return;
+			return false;
 		}
 	}
 	if (pattern.lanes.size() < MAX_LANES) {
@@ -274,6 +274,7 @@ void DrumData::set_hit_at_time(double beat_time, int note, int velocity)
 				update_events(pattern_id);
 			});
 	}
+	return true;
 }
 
 void DrumData::set_swing(float swing)

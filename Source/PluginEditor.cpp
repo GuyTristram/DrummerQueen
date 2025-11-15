@@ -222,8 +222,13 @@ void DrummerQueenAudioProcessorEditor::mouseWheelMove(const juce::MouseEvent&, c
 void DrummerQueenAudioProcessorEditor::changeListenerCallback(juce::ChangeBroadcaster*)
 {
 	auto midi_events = audioProcessor.get_recorded_midi();
+	bool update_pattern = false;
 	for (auto& e : midi_events) {
-		data().set_hit_at_time(e.beat_time, e.note, e.velocity);
+        update_pattern |= data().set_hit_at_time(e.beat_time, e.note, e.velocity);
+	}
+	if (update_pattern) {
+		set_pattern(data().get_current_pattern_id());
+		resize_grid();
 	}
 	m_bpm_editor.setText(std::format("{:.2f}", audioProcessor.bpm()), juce::dontSendNotification);
     auto bar_pos_beats = audioProcessor.barPos();
