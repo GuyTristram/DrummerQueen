@@ -178,7 +178,7 @@ void DrummerQueenAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer,
 		m_bpm = *pos->getBpm();
 	}
 
-    if (!pos || !pos->getIsPlaying()) {
+    if (!pos || !(pos->getIsPlaying() || pos->getIsRecording())) {
         sendChangeMessage();
         return;
     }
@@ -212,7 +212,23 @@ void DrummerQueenAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer,
         }
 
 		// Genetrate outgoing MIDI notes
-		m_data.get_events(*beat_pos_begin, *beat_pos_begin + buffer_length_beats, num_samples, midiMessages);
+#ifndef JUCE_ADDED_PREROLL_CHECK
+		if (*pos->getTimeInSamples() == 0) {
+            m_zero_position_buffer.clear();
+            m_data.get_events(0., buffer_length_beats, num_samples, m_zero_position_buffer);
+		}
+        else {
+            if (!m_zero_position_buffer.isEmpty()) {
+                midiMessages.addEvents(m_zero_position_buffer, 0, num_samples, 0);
+                m_zero_position_buffer.clear();
+            }
+            m_data.get_events(*beat_pos_begin, *beat_pos_begin + buffer_length_beats, num_samples, midiMessages);
+        }
+#else
+        if (!pos->getInPreroll()) {
+            m_data.get_events(*beat_pos_begin, *beat_pos_begin + buffer_length_beats, num_samples, midiMessages);
+        }
+#endif
     }
     sendChangeMessage();
 

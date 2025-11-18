@@ -71,6 +71,7 @@ private:
 	static constexpr int MAX_MIDI_MESSAGES = 32;
 	std::vector<DrumEvent> m_midi_messages;
     bool m_recording = false;
+    juce::MidiBuffer m_zero_position_buffer;
 
     //==============================================================================
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (DrummerQueenAudioProcessor)

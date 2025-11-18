@@ -134,6 +134,7 @@ DrummerQueenAudioProcessorEditor::DrummerQueenAudioProcessorEditor (DrummerQueen
 		audioProcessor.recording(m_record_button.getToggleState());
 		};
     addAndMakeVisible(m_record_button);
+    addAndMakeVisible(m_bpm_editor);
 
     layout_components();
     setSize(1124, 448);
@@ -187,6 +188,7 @@ void DrummerQueenAudioProcessorEditor::layout_components()
     }
 
     m_record_button.setBounds(m_pattern_button_parent.getRight() + 8, 8, 48, 48);
+	m_bpm_editor.setBounds(m_record_button.getRight() + 8, 8, 80, 48);
 
     int x = m_grid_left;
     for (auto& vb : m_velocity_buttons) {
