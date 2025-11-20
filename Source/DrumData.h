@@ -196,7 +196,12 @@ inline void DrumData::get_events(double start_time, double end_time, int num_sam
 	double time = start_time;
 	while (time < end_time) {
 		auto& item = sequence[seq_index];
-		get_events(item.pattern, start_time_wrap - item.start_beat, end_time_wrap - item.start_beat, item.start_beat + num_wraps * sequence_length_beats, num_samples, midiMessages);
+		get_events(item.pattern,
+			       start_time_wrap - item.start_beat,
+			       end_time_wrap - item.start_beat,
+			       item.start_beat + num_wraps * sequence_length_beats,
+			       num_samples,
+			       midiMessages);
 		time += item.end_beat - start_time_wrap;
 		seq_index = (seq_index + 1) % sequence.size();
 		if (seq_index == 0) {
